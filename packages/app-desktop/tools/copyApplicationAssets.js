@@ -67,7 +67,6 @@ async function main() {
 	const dirs = [
 		'tinymce',
 		'@fortawesome/fontawesome-free/webfonts',
-		'roboto-fontface/fonts',
 		'codemirror/theme',
 		{
 			src: langSourceDir,
@@ -86,7 +85,6 @@ async function main() {
 		'codemirror/addon/',
 		'codemirror/lib/codemirror.css',
 		'mark.js/dist/mark.min.js',
-		'roboto-fontface/css/roboto/roboto-fontface.css',
 		'smalltalk/css/smalltalk.css',
 		'smalltalk/dist/smalltalk.min.js',
 		'smalltalk/img/IDR_CLOSE_DIALOG_H.png',
@@ -145,6 +143,26 @@ async function main() {
 
 		console.info(`Copying ${stripOffRootDir(sourceFile)} => ${stripOffRootDir(destFile)}`);
 		await withRetry(() => copy(sourceFile, destFile, { overwrite: true }));
+	}
+
+	// macOS 15 on Apple Silicon uses the system font. The Roboto webfont was
+	// previously applied to every div/span/a and shipped as extra font files.
+	await withRetry(() => remove(`${buildLibDir}/roboto-fontface`));
+
+	// OCR runs with LSTM only. Electron on this machine loads the relaxed-SIMD
+	// build and falls back to SIMD. The other WASM variants are unused.
+	const tesseractCoreDir = `${buildDir}/tesseract.js-core`;
+	const tesseractKeep = new Set([
+		'tesseract-core-relaxedsimd-lstm.wasm.js',
+		'tesseract-core-simd-lstm.wasm.js',
+		'package.json',
+		'LICENSE',
+	]);
+	const { readdir } = require('fs').promises;
+	for (const name of await readdir(tesseractCoreDir)) {
+		if (!tesseractKeep.has(name)) {
+			await withRetry(() => remove(`${tesseractCoreDir}/${name}`));
+		}
 	}
 
 	const supportedLocales = glob.sync(`${langSourceDir}/*.js`).map(s => {

@@ -96,7 +96,7 @@ gulp.task('before-start', gulp.series(
 ));
 gulp.task('before-dist', gulp.series(
 	buildRequiresTsc,
-	'cleanOnnxRuntime',
+	gulp.parallel('cleanOnnxRuntime', 'compileSass', 'copyApplicationAssets'),
 ));
 
 // Since "build" runs before "tsc", exclude tasks that require

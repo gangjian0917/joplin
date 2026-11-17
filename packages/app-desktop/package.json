@@ -31,7 +31,24 @@
   "desktopName": "appimagekit-joplin",
   "build": {
     "appId": "net.cozic.joplin-desktop",
-    "compression": "normal",
+    "compression": "maximum",
+    "electronLanguages": [
+      "en",
+      "zh_CN",
+      "zh_TW"
+    ],
+    "files": [
+      "!**/*.map",
+      "!**/*.md",
+      "!**/integration-tests{,/**/*}",
+      "!**/node_modules/onnxruntime-web{,/**/*}",
+      "!**/node_modules/sqlite3/deps{,/**/*}",
+      "!**/node_modules/sqlite3/src{,/**/*}",
+      "!**/node_modules/node-gyp{,/**/*}",
+      "!**/node_modules/**/{test,tests,__tests__,example,examples}{,/**/*}",
+      "!**/vendor/lib/@fortawesome/fontawesome-free/webfonts/*.{svg,eot,ttf,woff}",
+      "!**/vendor/lib/roboto-fontface{,/**/*}"
+    ],
     "productName": "Joplin",
     "npmRebuild": false,
     "afterSign": "./tools/notarizeMacApp.js",
@@ -98,19 +115,13 @@
         {
           "target": "dmg",
           "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "pkg",
-          "arch": [
-            "x64"
+            "arm64"
           ]
         },
         {
           "target": "zip",
           "arch": [
-            "x64"
+            "arm64"
           ]
         }
       ],

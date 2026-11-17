@@ -184,7 +184,7 @@ body, button, input, textarea, select {
 	font-family: var(--joplin-font-family, -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", sans-serif);
 	font-size: var(--joplin-font-size, 13px);
 	letter-spacing: -0.006em;
-	-webkit-font-smoothing: auto;
+	-webkit-font-smoothing: antialiased;
 }
 
 div, span, a {

@@ -14,7 +14,21 @@
 | 界面 | 字体和视觉按 macOS 15 系统样式对齐：`-apple-system` / 苹方、`ui-monospace` / SF Mono，界面 13px、正文 16px、标题 22px、次要文字 11px |
 | 编译入口 | `/Users/meizu/github/build-joplin.sh`，固定执行 `yarn dist --mac --arm64` |
 
-上游 `packages/app-desktop/package.json` 里的 macOS 目标仍写着 x64。本仓库的编译脚本在打包前把它改成只出 arm64，结束后还原该文件。日常使用以脚本产出的 arm64 包为准。
+`packages/app-desktop/package.json` 的 macOS 目标是 arm64 的 dmg 和 zip。编译脚本在打包前会再确认一次，结束后还原该文件。
+
+## 体积
+
+2026-11-17 按 M2 约定重新打包后：
+
+| 产物 | 优化前 | 优化后 |
+| --- | --- | --- |
+| `Joplin.app` | 584MB | 350MB |
+| `Joplin-3.7.22-arm64.dmg` | 201MB | 123MB |
+| `app.asar` | 221MB | 72MB |
+
+去掉的是不参与这台机器运行的内容：`onnxruntime-web` 的网页 WASM、Tesseract 用不到的 WASM 变体、Chromium 除 `en` / `zh_CN` / `zh_TW` 以外的 `.lproj`、source map、sqlite 源码包、测试目录，以及 Roboto 网页字体。本地嵌入仍使用 `onnxruntime-node` 的 arm64 库。
+
+界面样式在打包前重新编译。原先的 `style.min.css` 仍给每个 `div`、`span`、`a` 指定 Roboto，现在改为继承系统字体，并用 `-webkit-font-smoothing: antialiased`。
 
 ## 机器
 

@@ -6,6 +6,8 @@
 
 许可证仍是上游的 AGPL-3.0-or-later。
 
+直接下载已编译的 Apple Silicon 安装包：[releases/Joplin-3.7.22-arm64.dmg](https://github.com/gangjian0917/joplin/raw/main/releases/Joplin-3.7.22-arm64.dmg)。
+
 ## 项目目标
 
 - 安装包只含 `mac-arm64`，Electron 和原生模块都按 arm64 打包。

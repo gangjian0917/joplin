@@ -1,5 +1,6 @@
 import { EditorKeymap, EditorLanguageType, EditorSettings, EditorTheme } from '@joplin/editor/types';
 import shim from '@joplin/lib/shim';
+import { macosMonospaceFontFamily } from '@joplin/lib/themes/macos';
 import { MarkupLanguage, MarkupToHtml } from '@joplin/renderer';
 import { useMemo } from 'react';
 import { useSelector } from 'react-redux';
@@ -56,7 +57,7 @@ const useEditorSettings = (props: EditorSettingsProps) => {
 				...props.baseTheme,
 				marginLeft: 0,
 				marginRight: 0,
-				monospaceFont: settings.monospaceFont,
+				monospaceFont: settings.monospaceFont || (shim.isMac() ? macosMonospaceFontFamily : ''),
 				paddingBottom: 400,
 			},
 			automatchBraces: settings.automatchBraces,

@@ -20,6 +20,7 @@ import { _ } from '@joplin/lib/locale';
 import bridge from '../../../../../services/bridge';
 import markdownUtils from '@joplin/lib/markdownUtils';
 import shim from '@joplin/lib/shim';
+import { macosMonospaceFontFamily } from '@joplin/lib/themes/macos';
 import { themeStyle } from '@joplin/lib/theme';
 import { ThemeAppearance } from '@joplin/lib/themes/type';
 import dialogs from '../../../../dialogs';
@@ -444,7 +445,7 @@ function CodeMirror(props: NoteBodyEditorProps, ref: ForwardedRef<NoteBodyEditor
 		const codeBackgroundColor = Setting.value('editor.keyboardMode') !== 'vim' ? theme.codeBackgroundColor : 'inherit';
 		const monospaceFonts = [];
 		if (Setting.value('style.editor.monospaceFontFamily')) monospaceFonts.push(`"${Setting.value('style.editor.monospaceFontFamily')}"`);
-		monospaceFonts.push('monospace');
+		monospaceFonts.push(shim.isMac() ? macosMonospaceFontFamily : 'monospace');
 
 		const maxWidthCss = props.contentMaxWidth ? `
 			margin-right: auto !important;

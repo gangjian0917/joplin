@@ -31,11 +31,14 @@ const renderer: ListRenderer = {
 		`	
 		& {
 			display: block;
+			box-sizing: border-box;
+			padding: 2px 6px;
 		}
 
 		> .row {
 			display: flex;
 			height: 100%;
+			border-radius: 6px;
 
 			> .item {
 				display: flex;
@@ -82,8 +85,11 @@ const renderer: ListRenderer = {
 			display: inline-block;
 		}
 
-		> .row.-selected {
+		> .row.-selected,
+		> .row.-published.-selected,
+		> .row.-shared.-selected {
 			background-color: var(--joplin-selected-color);
+			color: var(--joplin-selected-text-color, var(--joplin-color));
 		}
 
 		> .row.-shared {
@@ -94,15 +100,12 @@ const renderer: ListRenderer = {
 			color: var(--joplin-color4);
 		}
 
-		> .row.-published.-selected {
-			color: var(--joplin-color);
-		}
-
 		> .row.-completed {
 			opacity: 0.5;
 		}
 			
-		> .row:hover, &.-focus-visible > .row {
+		&:hover > .row:not(.-selected),
+		&.-focus-visible > .row:not(.-selected) {
 			background-color: var(--joplin-background-color-hover3);
 		}
 

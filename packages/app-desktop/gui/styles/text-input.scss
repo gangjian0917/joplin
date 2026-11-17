@@ -1,10 +1,14 @@
 .text-input {
-	height: 24px;
-	max-height: 24px;
+	height: 22px;
+	max-height: 22px;
 	border: 1px solid var(--joplin-divider-color);
-	padding-left: 5px;
-	padding-right: 5px;
+	border-radius: 6px;
+	padding-left: 8px;
+	padding-right: 8px;
 	box-sizing: border-box;
+	font-family: var(--joplin-font-family);
+	font-size: var(--joplin-font-size);
+	letter-spacing: -0.006em;
 	color: var(--joplin-color);
 	background-color: var(--joplin-background-color);
 }

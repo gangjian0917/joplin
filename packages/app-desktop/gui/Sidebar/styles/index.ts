@@ -8,6 +8,7 @@ interface StyleProps {
 		backgroundColor: string;
 		backgroundColorHover2: string;
 		color2: string;
+		selectedColor2: string;
 		color4: string;
 		colorError2: string;
 		colorFaded2: string;
@@ -66,14 +67,21 @@ export const StyledAllNotesIcon = styled(StyledHeaderIcon)`
 	margin-right: 8px;
 `;
 
+const usesAccentSelection = (props: StyleProps) => {
+	const selected = (props.theme.selectedColor2 || '').toLowerCase();
+	return selected === '#007aff' || selected === '#0a84ff';
+};
+
 export const StyledHeaderLabel = styled.span`
 	flex: 1;
-	color: ${(props: StyleProps) => props.theme.color2};
-	font-size: ${(props: StyleProps) => Math.round(props.theme.fontSize * 1.1)}px;
-	font-weight: bold;
+	color: ${(props: StyleProps) => shim.isMac() ? props.theme.colorFaded2 : props.theme.color2};
+	font-size: ${(props: StyleProps) => shim.isMac() ? 11 : Math.round(props.theme.fontSize * 1.1)}px;
+	font-weight: ${shim.isMac() ? 600 : 'bold'};
+	letter-spacing: ${shim.isMac() ? '0.06em' : 'normal'};
 `;
 
 function listItemTextColor(props: StyleProps) {
+	if (props.selected && usesAccentSelection(props)) return '#ffffff';
 	if (props.isConflictFolder) return props.theme.colorError2;
 	if (props.isSpecialItem) return props.theme.colorFaded2;
 	if (props.selected && props.isPublished) return props.theme.color2;
@@ -83,11 +91,13 @@ function listItemTextColor(props: StyleProps) {
 }
 
 export const StyledListItemAnchor = styled.a`
-	font-size: ${(props: StyleProps) => Math.round(props.theme.fontSize * 1.0833333)}px;
+	font-size: ${(props: StyleProps) => shim.isMac() ? props.theme.fontSize : Math.round(props.theme.fontSize * 1.0833333)}px;
+	letter-spacing: ${shim.isMac() ? '-0.006em' : 'normal'};
 	text-decoration: none;
 	color: ${(props: StyleProps) => listItemTextColor(props)};
 	cursor: default;
 	opacity: ${(props: StyleProps) => {
+		if (shim.isMac()) return 1;
 		// So that the conflicts folder and shared folders have sufficient contrast,
 		// use an opacity of 1 even when unselected.
 		const needsHigherContrast = props.isConflictFolder || props.isSpecialItem;

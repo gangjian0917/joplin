@@ -486,7 +486,7 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 			*/
 			
 			.tox .tox-dialog textarea {
-				font-family: Menlo, Monaco, Consolas, "Courier New", monospace !important;
+				font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, "Courier New", monospace !important;
 			}
 
 			.tox .tox-dialog-wrap__backdrop {

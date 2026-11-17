@@ -45,11 +45,13 @@ a {
 
 ::-webkit-scrollbar-thumb {
 	background: var(--scrollbar-thumb-color);
-	border-radius: calc(var(--scrollbar-size, 7px) * 0.7);
+	border-radius: 999px;
+	border: 2px solid transparent;
+	background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-track:hover {
-	background: rgba(0, 0, 0, 0.1);
+	background: transparent;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -88,13 +90,13 @@ a {
 .icon-button:hover {
 	background-color: rgba(0,0,0,0.05) !important;
 	border: 1px solid rgba(0,0,0,0.10);
-	border-radius: 5px;
+	border-radius: 6px;
 }
 
 .icon-button:active {
 	background-color: rgba(0,0,0,0.10) !important;
 	border: 1px solid rgba(0,0,0,0.15);
-	border-radius: 5px;
+	border-radius: 6px;
 }
 
 .rdtPicker {
@@ -103,11 +105,11 @@ a {
 }
 
 .smalltalk {
-	font-family: sans-serif;
+	font-family: var(--joplin-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
 }
 
 .help-tooltip {
-	font-family: sans-serif;
+	font-family: var(--joplin-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
 	max-width: 200px;
 }
 
@@ -155,7 +157,8 @@ a {
 
 
 *:focus-visible {
-	outline: 1px solid var(--joplin-focus-outline-color);
+	outline: 3px solid color-mix(in srgb, var(--joplin-focus-outline-color) 55%, transparent);
+	outline-offset: 1px;
 }
 
 // The browser-default focus-visible indicator was originally removed for aesthetic
@@ -176,17 +179,22 @@ input:not([type=button]):not([type=checkbox]) {
 General classes
 ========================================================================================= */
 
-body, button {
+body, button, input, textarea, select {
 	color: var(--joplin-color);
-	font-size: 13px;
+	font-family: var(--joplin-font-family, -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", sans-serif);
+	font-size: var(--joplin-font-size, 13px);
+	letter-spacing: -0.006em;
+	-webkit-font-smoothing: auto;
 }
 
 div, span, a {
-	font-family: Roboto;
+	font-family: inherit;
 }
 
 h2 {
-	font-size: 20px;
+	font-size: 17px;
+	font-weight: 600;
+	letter-spacing: -0.022em;
 
 	&.-no-top-margin {
 		margin-top: 0;

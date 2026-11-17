@@ -83,7 +83,7 @@ export default function(theme: RendererTheme, options: Options = null) {
 
 	theme = theme ? theme : {};
 
-	const fontFamily = options.baseFontFamily || '\'Avenir Next\', \'Avenir\', \'Arial\', sans-serif';
+	const fontFamily = options.baseFontFamily || '-apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Avenir Next", Arial, sans-serif';
 
 	const contentWrapperTarget = options.contentWrapperSelector ?? '#rendered-md';
 	const maxWidthTarget = options.contentMaxWidthTarget ? options.contentMaxWidthTarget : contentWrapperTarget;
@@ -110,8 +110,13 @@ export default function(theme: RendererTheme, options: Options = null) {
 			line-height: ${theme.lineHeight};
 			background-color: ${theme.backgroundColor};
 			font-family: ${fontFamily};
+			letter-spacing: -0.012em;
 			padding-bottom: ${formatCssSize(theme.bodyPaddingBottom)};
 			padding-top: ${formatCssSize(theme.bodyPaddingTop)};
+		}
+		pre, code, kbd, samp {
+			font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+			letter-spacing: 0;
 		}
 		kbd {
 			border: 1px solid ${theme.codeBorderColor};

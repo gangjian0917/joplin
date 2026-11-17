@@ -51,20 +51,25 @@ const defaultLeftToRightItemRenderer: ListRenderer = {
 
 	itemCss: // css
 		`			
+		& {
+			box-sizing: border-box;
+			padding: 2px 6px;
+		}
+
 		&:before {
 			content: '';
 			border-bottom: 1px solid var(--joplin-divider-color);
-			width: 90%;
+			width: calc(100% - 28px);
 			position: absolute;
 			bottom: 0;
-			left: 5%;
+			left: 14px;
 		}
 	
 		> .content.-selected {
 			background-color: var(--joplin-selected-color);
 		}
 
-		&:hover {
+		&:hover > .content:not(.-selected) {
 			background-color: var(--joplin-background-color-hover3);
 		}
 	
@@ -73,7 +78,9 @@ const defaultLeftToRightItemRenderer: ListRenderer = {
 			box-sizing: border-box;
 			position: relative;
 			width: 100%;
-			padding: 16px;
+			height: 100%;
+			border-radius: 8px;
+			padding: 12px 10px;
 			align-items: flex-start;
 			overflow-y: hidden;
 			flex-direction: column;
@@ -91,6 +98,8 @@ const defaultLeftToRightItemRenderer: ListRenderer = {
 			> .title {
 				font-family: var(--joplin-font-family);
 				font-size: var(--joplin-font-size);
+				font-weight: 600;
+				letter-spacing: -0.006em;
 				color: var(--joplin-color);
 				cursor: default;
 				flex: 0;
@@ -124,8 +133,10 @@ const defaultLeftToRightItemRenderer: ListRenderer = {
 			> .preview {
 				overflow-y: hidden;
 				font-family: var(--joplin-font-family);
-				font-size: var(--joplin-font-size);
-				color: var(--joplin-color);
+				font-size: 11px;
+				line-height: 1.35;
+				letter-spacing: 0;
+				color: var(--joplin-color-faded);
 				cursor: default;
 			}
 		}
@@ -142,10 +153,13 @@ const defaultLeftToRightItemRenderer: ListRenderer = {
 			}
 		}
 
-		> .content.-published.-selected {
-			> .title {
-				color: var(--joplin-color);
-			}
+		> .content.-selected > .title,
+		> .content.-selected > .preview,
+		> .content.-published.-selected > .title,
+		> .content.-shared.-selected > .title,
+		> .content.-selected > .title > .watchedicon,
+		> .content.-selected > .title > .lockedicon {
+			color: var(--joplin-selected-text-color, var(--joplin-color));
 		}
 
 		> .content.-completed {

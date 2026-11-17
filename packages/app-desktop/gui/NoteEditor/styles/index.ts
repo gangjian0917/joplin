@@ -1,5 +1,7 @@
 import { NoteEditorProps } from '../utils/types';
 
+import shim from '@joplin/lib/shim';
+import { macosNoteTitleFontSize } from '@joplin/lib/themes/macos';
 import { buildStyle } from '@joplin/lib/theme';
 
 export default function styles(props: NoteEditorProps) {
@@ -18,13 +20,14 @@ export default function styles(props: NoteEditorProps) {
 				paddingTop: 5,
 				minHeight: 35,
 				boxSizing: 'border-box',
-				fontWeight: 'bold',
 				paddingBottom: 5,
 				paddingLeft: 0,
 				paddingRight: 8,
 				marginLeft: 5,
 				color: theme.textStyle.color,
-				fontSize: Math.round(theme.textStyle.fontSize * 1.5),
+				fontSize: shim.isMac() ? macosNoteTitleFontSize : Math.round(theme.textStyle.fontSize * 1.5),
+				fontWeight: shim.isMac() ? 700 : 'bold',
+				letterSpacing: shim.isMac() ? '-0.021em' : undefined,
 				backgroundColor: theme.backgroundColor,
 				border: 'none',
 			},

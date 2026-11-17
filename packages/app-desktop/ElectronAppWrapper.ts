@@ -263,7 +263,9 @@ export default class ElectronAppWrapper {
 			// A backgroundColor is needed to enable sub-pixel rendering.
 			// Based on https://www.electronjs.org/docs/latest/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do,
 			// this needs to be a non-transparent color:
-			backgroundColor: nativeTheme.shouldUseDarkColors ? '#333' : '#fff',
+			backgroundColor: shim.isMac()
+				? (nativeTheme.shouldUseDarkColors ? '#1c1c1e' : '#ececec')
+				: (nativeTheme.shouldUseDarkColors ? '#333' : '#fff'),
 			webPreferences: {
 				session: this.joplinSession_,
 				nodeIntegration: true,

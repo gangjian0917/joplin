@@ -32,6 +32,7 @@ import NoteLockSession from '@joplin/lib/services/noteLock/NoteLockSession';
 import isNoteLockEnabled from '@joplin/lib/services/noteLock/isNoteLockEnabled';
 import { SyncInfo } from '@joplin/lib/services/synchronizer/syncInfoUtils';
 import NoteLockPanel from './NoteLockPanel/NoteLockPanel';
+import { macosEditorFontSize } from '@joplin/lib/themes/macos';
 import { themeStyle } from '@joplin/lib/theme';
 import { substrWithEllipsis } from '@joplin/lib/string-utils';
 import NoteSearchBar from '../NoteSearchBar';
@@ -550,7 +551,7 @@ function NoteEditorContent(props: NoteEditorProps) {
 		plugins: props.plugins,
 		// KaTeX isn't supported in HTML notes
 		mathEnabled: markupLanguage === MarkupLanguage.Markdown && Setting.value('markdown.plugin.katex'),
-		fontSize: Setting.value('style.editor.fontSize'),
+		fontSize: macosEditorFontSize(Setting.value('style.editor.fontSize')),
 		contentMaxWidth: props.contentMaxWidth,
 		scrollbarSize: props.scrollbarSize,
 		baseFontFamily: props.viewerFontFamily,

@@ -53,7 +53,7 @@ const createTheme = (theme: EditorTheme): Extension[] => {
 
 		// Avoid using units here -- 1.55em, for example, can cause lines to overlap
 		// if some lines contain text with a large enough font size.
-		lineHeight: theme.isDesktop ? '1.55' : undefined,
+		lineHeight: theme.isDesktop ? '1.45' : undefined,
 	};
 	const baseSelectionStyle: Record<string, string> = { };
 	const blurredSelectionStyle: Record<string, string> = { };
@@ -72,7 +72,8 @@ const createTheme = (theme: EditorTheme): Extension[] => {
 	}
 
 	const monospaceStyle = {
-		fontFamily: theme.monospaceFont || 'monospace',
+		fontFamily: theme.monospaceFont || 'ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace',
+		letterSpacing: '0',
 	};
 
 	// This is equivalent to the default selection style -- our styling must

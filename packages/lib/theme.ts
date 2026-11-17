@@ -7,6 +7,8 @@ import theme_nord from './themes/nord';
 import theme_aritimDark from './themes/aritimDark';
 import theme_oledDark from './themes/oledDark';
 import Setting from './models/Setting';
+import shim from './shim';
+import { applyMacosTheme, macosBodyFontSize, macosFontFamily, macosSecondaryFontSize, macosUiFontSize } from './themes/macos';
 import { Theme, ThemeAppearance } from './themes/type';
 
 const Color = require('color');
@@ -32,26 +34,27 @@ const literal = <T extends string> (str: T): T => str;
 // globalStyle should be used for properties that do not change across themes
 // i.e. should not be used for colors
 const globalStyle = (() => {
+	const mac = shim.isMac();
 
-	const margin = 15; // No text and no interactive component should be within this margin
-	const fontFamily = 'Roboto'; // 'sans-serif',
+	const margin = mac ? 16 : 15; // No text and no interactive component should be within this margin
+	const fontFamily = mac ? macosFontFamily : 'Roboto';
 	return {
 		fontFamily: fontFamily,
 		itemMarginTop: 10,
 		itemMarginBottom: 10,
 		disabledOpacity: 0.3,
 		buttonMinWidth: 50,
-		buttonMinHeight: 30,
-		editorFontSize: 12,
-		textAreaLineHeight: 17,
-		lineHeight: '1.6em',
+		buttonMinHeight: mac ? 22 : 30,
+		editorFontSize: mac ? macosBodyFontSize : 12,
+		textAreaLineHeight: mac ? 22 : 17,
+		lineHeight: mac ? '1.4' : '1.6em',
 		headerButtonHPadding: 6,
-		toolbarHeight: 26,
+		toolbarHeight: mac ? 28 : 26,
 		toolbarPadding: 6,
 		appearance: ThemeAppearance.Light,
-		mainPadding: 12,
-		topRowHeight: 50,
-		editorPaddingLeft: 8,
+		mainPadding: mac ? 10 : 12,
+		topRowHeight: mac ? 44 : 50,
+		editorPaddingLeft: mac ? 20 : 8,
 		listTabSize: '1.7em',
 
 		margin: margin,
@@ -72,11 +75,12 @@ const globalStyle = (() => {
 		},
 		inputStyle: {
 			border: '1px solid',
-			height: 24,
-			maxHeight: 24,
-			paddingLeft: 5,
-			paddingRight: 5,
+			height: mac ? 22 : 24,
+			maxHeight: mac ? 22 : 24,
+			paddingLeft: mac ? 8 : 5,
+			paddingRight: mac ? 8 : 5,
 			boxSizing: literal('border-box'),
+			...(mac ? { borderRadius: 6 } : {}),
 		},
 		containerStyle: {
 			overflow: literal('auto'),
@@ -85,15 +89,15 @@ const globalStyle = (() => {
 		buttonStyle: {
 			// marginRight: 10,
 			border: '1px solid',
-			minHeight: 26,
+			minHeight: mac ? 22 : 26,
 			minWidth: 80,
 			// maxWidth: 220,
-			paddingLeft: 12,
-			paddingRight: 12,
-			paddingTop: 6,
-			paddingBottom: 6,
+			paddingLeft: mac ? 14 : 12,
+			paddingRight: mac ? 14 : 12,
+			paddingTop: mac ? 2 : 6,
+			paddingBottom: mac ? 2 : 6,
 			// boxShadow: '0px 1px 1px rgba(0,0,0,0.3)',
-			borderRadius: 4,
+			borderRadius: mac ? 6 : 4,
 		},
 	};
 })();
@@ -144,12 +148,13 @@ type ThemeAndDerivedColors = ReturnType<typeof withDerivedColors>;
 
 export function extraStyles(theme: ThemeAndDerivedColors) {
 	const zoomRatio = 1;
+	const mac = shim.isMac();
 
-	const baseFontSize = Math.round(12 * zoomRatio);
+	const baseFontSize = mac ? macosUiFontSize : Math.round(12 * zoomRatio);
 	const fontSizes = {
 		fontSize: baseFontSize,
-		toolbarIconSize: 18,
-		noteViewerFontSize: Math.round(baseFontSize * 1.25),
+		toolbarIconSize: mac ? 16 : 18,
+		noteViewerFontSize: mac ? macosBodyFontSize : Math.round(baseFontSize * 1.25),
 	};
 
 	const inputStyle = {
@@ -212,7 +217,7 @@ export function extraStyles(theme: ThemeAndDerivedColors) {
 	const textStyle = {
 		fontFamily: globalStyle.fontFamily,
 		fontSize: baseFontSize,
-		lineHeight: '1.6em',
+		lineHeight: mac ? '1.4' : '1.6em',
 		color: theme.color,
 	};
 
@@ -223,7 +228,7 @@ export function extraStyles(theme: ThemeAndDerivedColors) {
 
 	const textStyleMinor = { ...textStyle,
 		color: theme.colorFaded,
-		fontSize: baseFontSize * 0.8,
+		fontSize: mac ? macosSecondaryFontSize : baseFontSize * 0.8,
 	};
 
 	const urlStyle = {
@@ -235,15 +240,17 @@ export function extraStyles(theme: ThemeAndDerivedColors) {
 	const h1Style = {
 		...textStyle,
 		color: theme.color,
-		fontSize: textStyle.fontSize * 1.5,
-		fontWeight: literal('bold'),
+		fontSize: mac ? 17 : textStyle.fontSize * 1.5,
+		fontWeight: mac ? literal('600') : literal('bold'),
+		...(mac ? { letterSpacing: '-0.022em' } : {}),
 	};
 
 	const h2Style = {
 		...textStyle,
 		color: theme.color,
-		fontSize: textStyle.fontSize * 1.3,
-		fontWeight: literal('bold'),
+		fontSize: mac ? 15 : textStyle.fontSize * 1.3,
+		fontWeight: mac ? literal('600') : literal('bold'),
+		...(mac ? { letterSpacing: '-0.016em' } : {}),
 	};
 
 	return {
@@ -262,7 +269,7 @@ export function extraStyles(theme: ThemeAndDerivedColors) {
 
 		containerStyle,
 		configScreenPadding: globalStyle.mainPadding * 2,
-		noteListHeaderHeight: 26,
+		noteListHeaderHeight: mac ? 28 : 26,
 		noteListHeaderBorderPadding: 4,
 
 		textStyle,
@@ -315,12 +322,13 @@ export function extraStyles(theme: ThemeAndDerivedColors) {
 
 		dialogBox: {
 			backgroundColor: theme.backgroundColor,
-			padding: 16,
-			boxShadow: '6px 6px 20px rgba(0,0,0,0.5)',
+			padding: mac ? 20 : 16,
+			boxShadow: mac ? '0 18px 50px rgba(0,0,0,0.22)' : '6px 6px 20px rgba(0,0,0,0.5)',
 			marginTop: 20,
 			maxHeight: '80%',
 			display: literal('flex'),
 			flexDirection: literal('column'),
+			...(mac ? { borderRadius: 12 } : {}),
 		},
 		buttonIconStyle: {
 			color: theme.iconColor,
@@ -343,6 +351,7 @@ export function extraStyles(theme: ThemeAndDerivedColors) {
 		highlightedColor: theme.highlightedColor ?? theme.selectedColor2,
 		markHighlightColor: theme.searchMarkerColor,
 		markHighlightBackgroundColor: theme.searchMarkerBackgroundColor,
+		selectedTextColor: theme.color,
 	};
 }
 
@@ -358,7 +367,7 @@ export function themeStyle(themeId: number): ThemeStyle {
 	const cacheKey = themeId;
 	if (themeCache_[cacheKey]) return themeCache_[cacheKey];
 
-	const theme = withDerivedColors(themes[themeId]);
+	const theme = withDerivedColors(applyMacosTheme(themeId, themes[themeId]));
 	const output: ThemeStyle = {
 		cacheKey,
 		...globalStyle,
@@ -368,6 +377,22 @@ export function themeStyle(themeId: number): ThemeStyle {
 		// relevant properties
 		...extraStyles(theme),
 	};
+
+	if (shim.isMac()) {
+		const dark = output.appearance === ThemeAppearance.Dark;
+		const accent = dark ? '#0a84ff' : '#007aff';
+		const usesSystemChrome = themeId === Setting.THEME_LIGHT || themeId === Setting.THEME_DARK;
+		output.focusOutlineColor = accent;
+		output.focusOutlineColorDimmed = dark ? 'rgba(10,132,255,0.45)' : 'rgba(0,122,255,0.35)';
+		output.scrollbarThumbColor = dark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.32)';
+		output.scrollbarThumbColorHover = dark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.48)';
+		output.scrollbarThumbColor2 = output.scrollbarThumbColor;
+		output.scrollbarThumbColorHover2 = output.scrollbarThumbColorHover;
+		if (usesSystemChrome) {
+			output.backgroundColorHover2 = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
+			output.selectedTextColor = '#ffffff';
+		}
+	}
 
 	themeCache_[cacheKey] = output;
 	return themeCache_[cacheKey];

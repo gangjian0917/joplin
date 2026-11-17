@@ -13,6 +13,8 @@ import * as React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import useAsyncEffect, { AsyncEffectEvent } from '@joplin/lib/hooks/useAsyncEffect';
 import themeToCss from '@joplin/lib/services/style/themeToCss';
+import shim from '@joplin/lib/shim';
+import { macosFontFamily } from '@joplin/lib/themes/macos';
 import { themeStyle } from '@joplin/lib/theme';
 import useDocument from '@joplin/lib/hooks/dom/useDocument';
 import { connect } from 'react-redux';
@@ -29,7 +31,7 @@ interface Props {
 const editorFontFromSettings = (settingValue: string) => {
 	const fontFamilies = [];
 	if (settingValue) fontFamilies.push(`"${settingValue}"`);
-	fontFamilies.push('\'Avenir Next\', Avenir, Arial, sans-serif');
+	fontFamilies.push(shim.isMac() ? macosFontFamily : '\'Avenir Next\', Avenir, Arial, sans-serif');
 
 	return fontFamilies;
 };

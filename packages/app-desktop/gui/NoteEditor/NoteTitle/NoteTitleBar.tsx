@@ -3,6 +3,8 @@ import { _ } from '@joplin/lib/locale';
 import CommandService from '@joplin/lib/services/CommandService';
 import { ChangeEvent, useCallback, useContext, useRef } from 'react';
 import NoteToolbar from '../../NoteToolbar/NoteToolbar';
+import { macosNoteTitleFontSize } from '@joplin/lib/themes/macos';
+import shim from '@joplin/lib/shim';
 import { buildStyle } from '@joplin/lib/theme';
 import time from '@joplin/lib/time';
 import { WindowIdContext } from '../../NewWindowOrIFrame';
@@ -27,12 +29,13 @@ function styles_(props: Props) {
 				paddingTop: 5,
 				minHeight: 38,
 				boxSizing: 'border-box',
-				fontWeight: 'bold',
 				paddingBottom: 5,
 				paddingLeft: 0,
 				paddingRight: 8,
 				color: theme.textStyle.color,
-				fontSize: Math.round(theme.textStyle.fontSize * 1.5),
+				fontSize: shim.isMac() ? macosNoteTitleFontSize : Math.round(theme.textStyle.fontSize * 1.5),
+				fontWeight: shim.isMac() ? 700 : 'bold',
+				letterSpacing: shim.isMac() ? '-0.021em' : undefined,
 				backgroundColor: theme.backgroundColor,
 				border: 'none',
 				width: '100%',

@@ -59,20 +59,26 @@ const renderer: ListRenderer = {
 
 	itemCss: // css
 		`	
+		& {
+			box-sizing: border-box;
+			padding: 2px 6px;
+		}
+
 		&:before {
 			content: '';
 			border-bottom: 1px solid var(--joplin-divider-color);
-			width: 90%;
+			width: calc(100% - 28px);
 			position: absolute;
 			bottom: 0;
-			left: 5%;
+			left: 14px;
 		}
 	
 		> .content.-selected {
 			background-color: var(--joplin-selected-color);
 		}
 
-		&:hover, &.-focus-visible > .content {
+		&:hover > .content:not(.-selected),
+		&.-focus-visible > .content:not(.-selected) {
 			background-color: var(--joplin-background-color-hover3);
 		}
 	
@@ -81,7 +87,9 @@ const renderer: ListRenderer = {
 			box-sizing: border-box;
 			position: relative;
 			width: 100%;
-			padding-left: 16px;
+			height: 100%;
+			border-radius: 6px;
+			padding-left: 10px;
 	
 			> .checkbox {
 				display: flex;
@@ -95,6 +103,8 @@ const renderer: ListRenderer = {
 			> .title {
 				font-family: var(--joplin-font-family);
 				font-size: var(--joplin-font-size);
+				font-weight: 500;
+				letter-spacing: -0.006em;
 				text-decoration: none;
 				color: var(--joplin-color);
 				cursor: default;
@@ -139,10 +149,12 @@ const renderer: ListRenderer = {
 			}
 		}
 
-		> .content.-published.-selected {
-			> .title {
-				color: var(--joplin-color);
-			}
+		> .content.-selected > .title,
+		> .content.-published.-selected > .title,
+		> .content.-shared.-selected > .title,
+		> .content.-selected > .title > .watchedicon,
+		> .content.-selected > .title > .lockedicon {
+			color: var(--joplin-selected-text-color, var(--joplin-color));
 		}
 
 		> .content.-completed {

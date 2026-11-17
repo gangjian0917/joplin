@@ -192,6 +192,29 @@ describe('EmbeddingIndexer', () => {
 		expect(await NoteEmbedding.countByNoteId(note.id)).toBe(1);
 	});
 
+	it('does not get stuck on a note with no title and no body', async () => {
+		if (skipIfNoVec()) return;
+		const folder = await Folder.save({ title: 'f' });
+		await Note.save({ title: 'real note', body: 'has content', parent_id: folder.id });
+		await Note.save({ title: '', body: '', parent_id: folder.id });
+		// Whitespace-only content: JS-side indexNote() sees these as empty
+		// (String.trim()), so the SQL candidate must agree — SQLite's
+		// one-argument trim() only strips U+0020, which would disagree on
+		// tabs/newlines/full-width spaces and re-select such notes forever.
+		await Note.save({ title: ' \t　', body: '\n\r  ﻿', parent_id: folder.id });
+		await waitForChangesSince(0, 3);
+
+		await EmbeddingIndexer.instance().maintenance();
+		await EmbeddingIndexer.instance().maintenance();
+
+		// indexNote() skips empty notes without writing a meta row, so the
+		// candidate query must filter them out — otherwise the initial scan
+		// never completes and the change feed never starts.
+		expect(Setting.value('ai.embedding.initialScanDone')).toBe(true);
+		expect(await NoteEmbedding.notYetIndexedNoteIds(10)).toEqual([]);
+		expect((await EmbeddingIndexer.instance().getStatus()).totalNotes).toBe(1);
+	});
+
 	it('embeds the title alongside the body so title-anchored queries match', async () => {
 		if (skipIfNoVec()) return;
 		const folder = await Folder.save({ title: 'f' });

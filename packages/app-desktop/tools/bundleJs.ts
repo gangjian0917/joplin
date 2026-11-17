@@ -25,12 +25,25 @@ const makeBuildContext = (entryPoint: string, renderer: boolean, addDebugStats: 
 		mainFields: renderer ? ['browser', 'main'] : ['main'],
 		plugins: [
 			{
+				// The embedding worker bundles @huggingface/transformers, whose
+				// optional image pipeline depends on sharp. The root resolutions
+				// maps sharp to the @joplin/empty stub; resolve it explicitly so
+				// the stub is inlined instead of a native require at runtime.
+				name: 'joplin--inline-sharp-stub',
+				setup: build => {
+					if (!entryPoint.includes('embeddingWorker')) return;
+					build.onResolve({ filter: /^sharp$/ }, () => {
+						return { path: require.resolve('sharp', { paths: [baseNodeModules, baseDir] }) };
+					});
+				},
+			},
+			{
 				// Configures ESBuild to require(...) certain libraries that cause issues if included directly
 				// in the bundle. Some of these are transitive dependencies and so need to have relative paths
 				// in the final bundle.
 				name: 'joplin--relative-imports-for-externals',
 				setup: build => {
-					const externalRegex = /^(.*\.node|sqlite3|node-fetch|electron|@electron\/remote\/.*|electron\/.*|@mapbox\/node-pre-gyp|jsdom|onnxruntime-node|@xenova\/transformers)$/;
+					const externalRegex = /^(.*\.node|sqlite3|node-fetch|electron|@electron\/remote\/.*|electron\/.*|@mapbox\/node-pre-gyp|jsdom|onnxruntime-node|onnxruntime-common|@xenova\/transformers)$/;
 					build.onResolve({ filter: externalRegex }, args => {
 						// Electron packages don't need relative requires
 						if (args.path === 'electron' || args.path.startsWith('electron/')) {
@@ -125,6 +138,9 @@ const bundleJs = async (writeStats: boolean) => {
 	const entryPoints = [
 		{ fileName: 'main.ts', renderer: false },
 		{ fileName: 'main-html.ts', renderer: true },
+		// Utility process: runs embedding inference off the UI threads. Its
+		// bundle is unpacked outside app.asar (see asarUnpack in package.json).
+		{ fileName: 'services/ai/embeddingWorker.ts', renderer: false },
 	];
 	for (const { fileName, renderer } of entryPoints) {
 		const compiler = await makeBuildContext(fileName, renderer, writeStats);

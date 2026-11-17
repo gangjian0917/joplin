@@ -23,6 +23,8 @@ import { msleep, Second } from '@joplin/utils/time';
 import determineBaseAppDirs from '@joplin/lib/determineBaseAppDirs';
 import getAppName from '@joplin/lib/getAppName';
 import { execCommand } from '@joplin/utils';
+import EmbeddingWorkerHost from './services/ai/EmbeddingWorkerHost';
+import { EmbeddingRequest, EmbeddingResponse, EMBEDDING_REQUEST_CHANNEL, EMBEDDING_RESPONSE_CHANNEL, serializeError } from './services/ai/embeddingWorkerProtocol';
 
 interface RendererProcessQuitReply {
 	canClose: boolean;
@@ -71,6 +73,7 @@ export default class ElectronAppWrapper {
 
 	private profileLocker_: FileLocker|null = null;
 	private ipcServer_: IpcServer|null = null;
+	private embeddingWorkerHost_: EmbeddingWorkerHost|null = null;
 	private ipcStartPort_ = 2658;
 
 	private mainProcessLoggerFilePath_: string;
@@ -99,6 +102,10 @@ export default class ElectronAppWrapper {
 
 	public electronApp() {
 		return this.electronApp_;
+	}
+
+	public embeddingWorkerAvailable() {
+		return this.embeddingWorkerHost_?.isAvailable() ?? false;
 	}
 
 	public mainWindow() {
@@ -557,6 +564,26 @@ export default class ElectronAppWrapper {
 			}
 		});
 
+		// Embedding batches can run for tens of seconds; the promise settles
+		// whenever the utility process replies and the response is routed back
+		// by requestId.
+		this.embeddingWorkerHost_ = new EmbeddingWorkerHost(this.appLogger_ as unknown as Logger);
+		ipcMain.on(EMBEDDING_REQUEST_CHANNEL, (event: import('electron').IpcMainEvent, request: EmbeddingRequest) => {
+			void (async () => {
+				// The send is inside the try: an unexpected throw while replying
+				// must not become an unhandledRejection (the main process exits
+				// on those) — it should just fail this one request.
+				try {
+					const result = await this.embeddingWorkerHost_.handleRequest(request.action, request.payload);
+					const response: EmbeddingResponse = { requestId: request.requestId, ok: true, result };
+					if (!event.sender.isDestroyed()) event.sender.send(EMBEDDING_RESPONSE_CHANNEL, response);
+				} catch (error) {
+					const response: EmbeddingResponse = { requestId: request.requestId, ok: false, error: serializeError(error) };
+					if (!event.sender.isDestroyed()) event.sender.send(EMBEDDING_RESPONSE_CHANNEL, response);
+				}
+			})();
+		});
+
 		// This handler receives IPC messages from a plugin or from the main window,
 		// and forwards it to the main window or the plugin window.
 		ipcMain.on('pluginMessage', (_event: import('electron').IpcMainEvent, message: PluginMessage) => {
@@ -625,6 +652,7 @@ export default class ElectronAppWrapper {
 	private onExit() {
 		this.stopPeriodicUpdateCheck();
 		this.profileLocker_.unlockSync();
+		this.embeddingWorkerHost_?.disposeAll();
 
 		// Probably doesn't matter if the server is not closed cleanly? Thus the lack of `await`
 		// eslint-disable-next-line promise/prefer-await-to-then -- Needed here because onExit() is not async

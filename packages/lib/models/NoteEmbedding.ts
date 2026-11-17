@@ -1,6 +1,7 @@
 import BaseModel from '../BaseModel';
 import JoplinDatabase from '../JoplinDatabase';
 import { NoteEmbeddingsMetaEntity } from '../services/database/types';
+import { noteIsBlankSql } from './noteTextIsBlank';
 
 // Storage for per-note chunk embeddings.
 //
@@ -92,6 +93,9 @@ export default class NoteEmbedding extends BaseModel {
 	// Indexable notes not yet embedded — drives the indexer's initial scan.
 	// `excludeIds` lets the caller skip notes that already failed this session,
 	// so a permanently bad note doesn't keep coming back.
+	// Notes with no title and no body never get a meta row (indexNote skips
+	// them), so without the empty-note predicate they would be re-selected on
+	// every scan tick and the initial scan would never complete.
 	public static async notYetIndexedNoteIds(limit: number, excludeIds: string[] = []): Promise<string[]> {
 		const excludeSql = excludeIds.length
 			? ` AND n.id NOT IN (${excludeIds.map(() => '?').join(',')})`
@@ -101,6 +105,7 @@ export default class NoteEmbedding extends BaseModel {
 			 WHERE (n.deleted_time IS NULL OR n.deleted_time = 0)
 			   AND (n.is_conflict IS NULL OR n.is_conflict = 0)
 			   AND n.is_locked = 0
+			   AND NOT ${noteIsBlankSql}
 			   AND NOT EXISTS (SELECT 1 FROM note_embeddings_meta m WHERE m.note_id = n.id)${excludeSql}
 			 LIMIT ?`,
 			[...excludeIds, limit],

@@ -1,77 +1,17 @@
-import { setupDatabaseAndSynchronizer, switchClient } from '../../testing/test-utils';
+import { createTempDir, setupDatabaseAndSynchronizer, switchClient } from '../../testing/test-utils';
+import Setting from '../../models/Setting';
+import shim from '../../shim';
+import * as fs from 'fs-extra';
+import * as tar from 'tar';
 import LocalEmbeddingProvider, { meanPoolAndNormalise } from './LocalEmbeddingProvider';
+import { EmbeddingCompute } from './types';
+import { ModelDescriptor } from './EmbeddingModelDownloader';
+import { HIDDEN, makeFakeOnnxRuntime, makeFakeTokenizer } from './testing/fakeOnnx';
 
 // Default tests use stubbed ONNX + tokenizer (no network, no 140 MB model).
 // The bottom test opts in to the real download via JOPLIN_RUN_REAL_EMBEDDING_TEST=1.
 
-interface FakeTokenized {
-	input_ids: { data: BigInt64Array; dims: number[] };
-	attention_mask: { data: BigInt64Array; dims: number[] };
-}
-
-const makeFakeTokenizer = (perTextTokenCount: number) => {
-	return (texts: string[]): FakeTokenized => {
-		const batch = texts.length;
-		const seqLen = perTextTokenCount;
-		const ids = new BigInt64Array(batch * seqLen);
-		const mask = new BigInt64Array(batch * seqLen);
-		for (let b = 0; b < batch; b++) {
-			for (let t = 0; t < seqLen; t++) {
-				ids[b * seqLen + t] = BigInt(((b + 1) * (t + 1)) % 100);
-				mask[b * seqLen + t] = BigInt(1);
-			}
-		}
-		return {
-			input_ids: { data: ids, dims: [batch, seqLen] },
-			attention_mask: { data: mask, dims: [batch, seqLen] },
-		};
-	};
-};
-
-const HIDDEN = 8;
-
-const makeFakeOnnxRuntime = () => {
-	class FakeTensor {
-		public data: Float32Array | BigInt64Array;
-		public dims: number[];
-		public constructor(_type: string, data: Float32Array | BigInt64Array | number[], dims: number[]) {
-			this.data = Array.isArray(data) ? new Float32Array(data) : data;
-			this.dims = dims;
-		}
-	}
-
-	const session = {
-		run: async (feeds: Record<string, FakeTensor>) => {
-			const [batch, seqLen] = feeds.input_ids.dims;
-			const out = new Float32Array(batch * seqLen * HIDDEN);
-			// Deterministic: each token's hidden vector is a function of the
-			// (token value, hidden index) so different inputs produce different
-			// pooled outputs and we can assert order-sensitivity.
-			const ids = feeds.input_ids.data as BigInt64Array;
-			for (let b = 0; b < batch; b++) {
-				for (let t = 0; t < seqLen; t++) {
-					const idVal = Number(ids[b * seqLen + t]);
-					for (let h = 0; h < HIDDEN; h++) {
-						out[(b * seqLen + t) * HIDDEN + h] = (idVal + h + 1) / 100;
-					}
-				}
-			}
-			return {
-				last_hidden_state: {
-					data: out,
-					dims: [batch, seqLen, HIDDEN],
-				},
-			};
-		},
-	};
-
-	return {
-		InferenceSession: { create: async () => session },
-		Tensor: FakeTensor,
-	};
-};
-
-const norm = (v: number[]) => Math.sqrt(v.reduce((s, x) => s + x * x, 0));
+const norm = (v: number[]) => Math.sqrt(v.reduce((sum, x) => sum + x * x, 0));
 
 describe('LocalEmbeddingProvider', () => {
 
@@ -97,41 +37,6 @@ describe('LocalEmbeddingProvider', () => {
 		expect(norm(vectors[1])).toBeCloseTo(1, 5);
 	});
 
-	it('splits large inputs into mini-batches to cap peak ONNX memory', async () => {
-		// Fat notes can produce hundreds of chunks; feeding them all to ONNX in
-		// one tensor blows up the renderer on low-free-memory machines
-		// (see #15761). The provider must split into ≤ MAX_EMBED_BATCH-sized
-		// sub-batches and return the concatenated result in order.
-		const runs: number[] = [];
-		const onnx = makeFakeOnnxRuntime();
-		const realCreate = onnx.InferenceSession.create;
-		onnx.InferenceSession.create = async () => {
-			const session = await realCreate();
-			const realRun = session.run;
-			session.run = async (feeds) => {
-				runs.push(feeds.input_ids.dims[0]);
-				return realRun(feeds);
-			};
-			return session;
-		};
-
-		const provider = new LocalEmbeddingProvider({
-			overrides: {
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test fakes intentionally loose
-				onnxRuntime: onnx as any,
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test fakes intentionally loose
-				tokenizer: makeFakeTokenizer(4) as any,
-			},
-		});
-
-		const inputs = Array.from({ length: 20 }, (_, i) => `t${i}`);
-		const vectors = await provider.embed(inputs);
-
-		expect(vectors).toHaveLength(20);
-		// 20 inputs / batch 8 → 8, 8, 4
-		expect(runs).toEqual([8, 8, 4]);
-	});
-
 	it('returns an empty array for empty input without initialising', async () => {
 		// No overrides — embed([]) must early-return before any setup runs.
 		const provider = new LocalEmbeddingProvider();
@@ -144,6 +49,65 @@ describe('LocalEmbeddingProvider', () => {
 		expect(provider.classification).toBe('local');
 		expect(provider.modelId).toBe('multilingual-e5-small');
 		expect(provider.dimension).toBe(384);
+	});
+
+	it('forwards batches through the compute seam with the e5 prefix', async () => {
+		// A fake model + stubbed download so init() gets a real directory
+		// without hitting the network or polluting the shared cache state.
+		const tempDir = await createTempDir();
+		const originalCacheDir = Setting.value('cacheDir');
+		Setting.setConstant('cacheDir', tempDir);
+		const fakeModel: ModelDescriptor = {
+			id: 'fake-compute-model',
+			archiveName: 'fake-compute-model',
+			downloadUrl: 'https://example.invalid/fake-compute-model.tar.gz',
+		};
+		const stagingDir = `${tempDir}/staging`;
+		await fs.mkdirp(stagingDir);
+		await fs.writeFile(`${stagingDir}/config.json`, '{}');
+		const archive = `${tempDir}/model.tar.gz`;
+		await tar.create({ gzip: true, cwd: stagingDir, file: archive }, ['config.json']);
+
+		const originalFetchBlob = shim.fetchBlob;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any -- fetchBlob's options bag is loosely typed across implementations
+		shim.fetchBlob = (async (_url: string, options: any) => {
+			await fs.copy(archive, options.path);
+			return { ok: true, status: 200, path: options.path };
+		}) as typeof shim.fetchBlob;
+
+		try {
+			const initCalls: { modelDir: string; archiveName: string }[] = [];
+			const embedCalls: { texts: string[]; prefix: string }[] = [];
+			const compute: EmbeddingCompute = {
+				init: async payload => {
+					initCalls.push(payload);
+				},
+				embed: async (texts, prefix) => {
+					embedCalls.push({ texts, prefix });
+					return texts.map(() => Array.from({ length: 2 }, () => 0));
+				},
+			};
+
+			const provider = new LocalEmbeddingProvider({ model: fakeModel, compute });
+			await provider.embed(['doc one', 'doc two']);
+			await provider.embedQuery(['search']);
+
+			expect(initCalls).toHaveLength(1);
+			expect(initCalls[0].modelDir).toContain('embedding-models');
+			expect(initCalls[0].archiveName).toBe(fakeModel.archiveName);
+
+			expect(embedCalls).toEqual([
+				{ texts: ['doc one', 'doc two'], prefix: 'passage: ' },
+				{ texts: ['search'], prefix: 'query: ' },
+			]);
+		} finally {
+			shim.fetchBlob = originalFetchBlob;
+			// setConstant is process-global and beforeEach doesn't reset it —
+			// restore it or the remaining tests (incl. the gated real-download
+			// one) would run against a deleted cacheDir.
+			Setting.setConstant('cacheDir', originalCacheDir);
+			await fs.remove(tempDir);
+		}
 	});
 
 	it('mean-pools only over masked-in tokens', () => {
@@ -191,9 +155,7 @@ describe('LocalEmbeddingProvider', () => {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any -- white-box reach-in to drive initialise() without calling embed()
 			await (provider as any).ensureInitialised();
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any -- ditto
-			expect((provider as any).session_).toBeTruthy();
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any -- ditto
-			expect((provider as any).tokenizer_).toBeTruthy();
+			expect((provider as any).inference_).toBeTruthy();
 		},
 		180_000,
 	);

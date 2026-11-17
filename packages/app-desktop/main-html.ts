@@ -89,18 +89,10 @@ const main = async () => {
 
 	pdfJs.GlobalWorkerOptions.workerSrc = `${bridge().electronApp().buildDir()}/pdf.worker.min.js`;
 
-	// onnxruntime-node loads a native binding at require time. Wrap it so a missing or broken
-	// prebuilt degrades to "embeddings unavailable" rather than crashing the whole app at startup.
-	//
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- onnxruntime-node has its own typings; we only need to forward the loaded module to the shim
-	let onnxRuntime: any = null;
-	try {
-		// eslint-disable-next-line @typescript-eslint/no-require-imports -- guarded require avoids a top-level import that would crash on a missing native binding
-		onnxRuntime = require('onnxruntime-node');
-	} catch (error) {
-		// eslint-disable-next-line no-console -- main-html runs before the logger is initialised below
-		console.warn('onnxruntime-node failed to load; AI embeddings will be unavailable:', (error as Error).message);
-	}
+	// Note: onnxruntime-node is NOT loaded here anymore. Embedding inference
+	// runs in the utility process (services/ai/embeddingWorker.ts) — the
+	// synchronous ONNX run would block this renderer's main thread for seconds
+	// per batch.
 
 	// sqlite-vec's wrapper resolves the native extension path via require.resolve,
 	// which inside a packaged Electron app returns a path inside app.asar — but
@@ -120,7 +112,6 @@ const main = async () => {
 		electronBridge: bridge(),
 		nodeSqlite,
 		sqliteVec: sqliteVecUnpacked,
-		onnxRuntime,
 		pdfJs: pdfJs as PdfJs,
 		isAppleSilicon,
 	});

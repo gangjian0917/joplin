@@ -4,6 +4,7 @@ import type FolderClass from './Folder';
 import type ResourceClass from './Resource';
 import type RevisionClass from './Revision';
 import ItemChange from './ItemChange';
+import { noteIsBlankUnaliasedSql } from './noteTextIsBlank';
 import Setting from './Setting';
 import shim from '../shim';
 import time from '../time';
@@ -596,8 +597,14 @@ export default class Note extends BaseItem {
 	// not trashed, not in conflict, and not locked. Used by the AI status reporter as the
 	// denominator in "N / total indexed".
 	public static async indexableCount() {
+		// Matches notYetIndexedNoteIds()'s filters so the displayed ratio can
+		// reach 100% — empty notes are excluded from both counts.
 		const r = await this.db().selectOne(
-			'SELECT count(*) as total FROM notes WHERE (deleted_time IS NULL OR deleted_time = 0) AND (is_conflict IS NULL OR is_conflict = 0) AND is_locked = 0',
+			`SELECT count(*) as total FROM notes
+			 WHERE (deleted_time IS NULL OR deleted_time = 0)
+			   AND (is_conflict IS NULL OR is_conflict = 0)
+			   AND is_locked = 0
+			   AND NOT ${noteIsBlankUnaliasedSql}`,
 		);
 		return r && r.total ? r.total : 0;
 	}

@@ -179,6 +179,10 @@ export class Bridge {
 		return this.electronWrapper_;
 	}
 
+	public embeddingWorkerAvailable() {
+		return this.electronWrapper_.embeddingWorkerAvailable();
+	}
+
 	public electronIsDev() {
 		return !this.electronApp().electronApp().isPackaged;
 	}

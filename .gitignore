@@ -651,6 +651,11 @@ packages/app-desktop/main-html.js
 packages/app-desktop/main.js
 packages/app-desktop/playwright.config.js
 packages/app-desktop/plugins/GotoAnything.js
+packages/app-desktop/services/ai/EmbeddingIpcClient.js
+packages/app-desktop/services/ai/EmbeddingWorkerHost.test.js
+packages/app-desktop/services/ai/EmbeddingWorkerHost.js
+packages/app-desktop/services/ai/embeddingWorker.js
+packages/app-desktop/services/ai/embeddingWorkerProtocol.js
 packages/app-desktop/services/aiStatusBridge.test.js
 packages/app-desktop/services/aiStatusBridge.js
 packages/app-desktop/services/autoUpdater/AutoUpdaterService.test.js
@@ -1534,6 +1539,7 @@ packages/lib/models/SmartFilter.js
 packages/lib/models/Tag.test.js
 packages/lib/models/Tag.js
 packages/lib/models/dateTimeFormats.test.js
+packages/lib/models/noteTextIsBlank.js
 packages/lib/models/settings/FileHandler.js
 packages/lib/models/settings/builtInMetadata.js
 packages/lib/models/settings/settingValidations.test.js
@@ -1616,6 +1622,8 @@ packages/lib/services/ai/EmbeddingIndexer.test.js
 packages/lib/services/ai/EmbeddingIndexer.js
 packages/lib/services/ai/EmbeddingModelDownloader.test.js
 packages/lib/services/ai/EmbeddingModelDownloader.js
+packages/lib/services/ai/LocalEmbeddingInference.test.js
+packages/lib/services/ai/LocalEmbeddingInference.js
 packages/lib/services/ai/LocalEmbeddingProvider.test.js
 packages/lib/services/ai/LocalEmbeddingProvider.js
 packages/lib/services/ai/OnnxRuntime.test.js
@@ -1642,6 +1650,7 @@ packages/lib/services/ai/providers/OpenAiCompatible.js
 packages/lib/services/ai/providers/TestProvider.js
 packages/lib/services/ai/testing/TestEmbeddingProvider.test.js
 packages/lib/services/ai/testing/TestEmbeddingProvider.js
+packages/lib/services/ai/testing/fakeOnnx.js
 packages/lib/services/ai/tools/ToolIndex.js
 packages/lib/services/ai/tools/buildEditorTools.js
 packages/lib/services/ai/tools/global/createNote.js

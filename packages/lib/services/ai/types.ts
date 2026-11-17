@@ -125,3 +125,12 @@ export interface EmbeddingProvider {
 	// treats them as always-ready.
 	modelDownloadStatus?(): Promise<ProviderModelDownloadStatus>;
 }
+
+// Compute seam injected by the desktop app: runs the actual ONNX inference in
+// the embedding utility process. init() is called with the downloaded model
+// directory before the first embed(); embed() receives the e5 prefix so the
+// caller keeps control of passage/query semantics.
+export interface EmbeddingCompute {
+	init(payload: { modelDir: string; archiveName: string }): Promise<void>;
+	embed(texts: string[], prefix: string): Promise<number[][]>;
+}

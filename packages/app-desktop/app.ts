@@ -68,6 +68,7 @@ import Note from '@joplin/lib/models/Note';
 import Resource from '@joplin/lib/models/Resource';
 import AiService from '@joplin/lib/services/ai/AiService';
 import LocalEmbeddingProvider from '@joplin/lib/services/ai/LocalEmbeddingProvider';
+import EmbeddingIpcClient from './services/ai/EmbeddingIpcClient';
 import { installAiStatusBridge, AiStatusStore } from './services/aiStatusBridge';
 
 const perfLogger = PerformanceLogger.create();
@@ -804,10 +805,14 @@ class Application extends BaseApplication {
 		// Install the local embedding provider before applySettingsSideEffects()
 		// — applyEmbeddingIndexerState() consults AiService for an active
 		// provider, so the indexer will silently sit idle if we wire it up after.
-		// Only install when ONNX is actually available; otherwise embeddings
-		// remain unavailable and the indexer stays off.
-		if (shim.onnxRuntime()) {
-			AiService.instance().setEmbeddingProvider(new LocalEmbeddingProvider());
+		// Only install when the embedding utility process can actually run;
+		// otherwise embeddings remain unavailable and the indexer stays off.
+		// Inference is forwarded to that process — a synchronous ONNX run in the
+		// renderer would block the UI thread for seconds per batch.
+		if (bridge().embeddingWorkerAvailable()) {
+			AiService.instance().setEmbeddingProvider(new LocalEmbeddingProvider({
+				compute: new EmbeddingIpcClient(),
+			}));
 		}
 
 		await this.applySettingsSideEffects();

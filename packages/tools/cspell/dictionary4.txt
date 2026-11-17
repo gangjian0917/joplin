@@ -366,3 +366,5 @@ todoist
 twodo
 Gemma
 instr
+xattr
+pango

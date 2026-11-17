@@ -1,8 +1,20 @@
 # 本机编译环境
 
-这份说明记录在这台 Mac 上编译 Joplin 桌面版的环境。源码树对应官网客户端 **3.7.22**，修订 `95cab5a86d770c57f58fd43953f37a2cfe5a7016`（标签 `v3.7.22`）。
+这个仓库的默认版本是 **macOS M2（Apple Silicon，arm64）专用**。桌面端只按这台机器的架构编译和调校，不把 Intel x64、Windows、Linux 当作默认产物。
 
-本地检出是这个标签的浅克隆，仓库里没有更早的上游历史。
+源码树对应官网客户端 **3.7.22**，修订 `95cab5a86d770c57f58fd43953f37a2cfe5a7016`（标签 `v3.7.22`）。本地检出是这个标签的浅克隆，仓库里没有更早的上游历史。
+
+## 默认目标：macOS M2
+
+| 项 | 约定 |
+| --- | --- |
+| 目标系统 | macOS 15.7.7（Build 24G720） |
+| 目标架构 | arm64，对应 Apple M2。Electron、Node 原生模块都按 arm64 安装和打包 |
+| 默认产物 | `Joplin.app` 与 `Joplin-<version>-arm64.dmg`，只含 `mac-arm64` |
+| 界面 | 字体和视觉按 macOS 15 系统样式对齐：`-apple-system` / 苹方、`ui-monospace` / SF Mono，界面 13px、正文 16px、标题 22px、次要文字 11px |
+| 编译入口 | `/Users/meizu/github/build-joplin.sh`，固定执行 `yarn dist --mac --arm64` |
+
+上游 `packages/app-desktop/package.json` 里的 macOS 目标仍写着 x64。本仓库的编译脚本在打包前把它改成只出 arm64，结束后还原该文件。日常使用以脚本产出的 arm64 包为准。
 
 ## 机器
 
@@ -35,7 +47,7 @@ yarn --version
 
 ## 编译
 
-仓库根目录的 `build-joplin.sh` 会安装缺失依赖、把 macOS 目标临时改成 arm64、关闭签名，然后执行 `yarn dist --mac --arm64 --publish=never`。`packages/app-desktop/package.json` 在脚本退出时还原。
+仓库根目录的 `build-joplin.sh` 按上面的 M2 约定编译：安装缺失依赖、把 macOS 目标临时改成 arm64、关闭签名，然后执行 `yarn dist --mac --arm64 --publish=never`。`packages/app-desktop/package.json` 在脚本退出时还原。
 
 本机目录约定：
 

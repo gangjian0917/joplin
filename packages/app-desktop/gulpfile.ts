@@ -88,7 +88,10 @@ const buildBeforeStartParallel = gulp.parallel(
 	'compileSass',
 	'cleanOnnxRuntime',
 );
-const buildRequiresTsc = gulp.series('bundle');
+// bundle must run after compilePackageInfo: main.ts imports the generated
+// packageInfo.js, so a missing file (fresh clone / cleaned tree) breaks the
+// esbuild step if they race in parallel.
+const buildRequiresTsc = gulp.series('compilePackageInfo', 'bundle');
 
 gulp.task('before-start', gulp.series(
 	buildRequiresTsc,

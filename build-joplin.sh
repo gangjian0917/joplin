@@ -66,7 +66,7 @@ rm -rf "$OUT_APP"
 ditto "$APP_SRC" "$OUT_APP"
 xattr -cr "$OUT_APP"
 
-DMG_SRC="$(find "$DESKTOP/dist" -maxdepth 1 -name 'Joplin-*-arm64.dmg' -print | head -n 1)"
+DMG_SRC="$(find "$DESKTOP/dist" -maxdepth 1 -name 'Joplin-*-arm64.dmg' -print 2>/dev/null | xargs ls -t 2>/dev/null | head -n 1)"
 if [[ -n "$DMG_SRC" ]]; then
 	cp -f "$DMG_SRC" "$ROOT/$(basename "$DMG_SRC")"
 	echo "DMG: $ROOT/$(basename "$DMG_SRC")"

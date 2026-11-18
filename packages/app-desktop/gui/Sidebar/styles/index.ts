@@ -9,6 +9,8 @@ interface StyleProps {
 		backgroundColorHover2: string;
 		color2: string;
 		selectedColor2: string;
+		sidebarSelectedBackgroundColor?: string;
+		sidebarSelectedTextColor?: string;
 		color4: string;
 		colorError2: string;
 		colorFaded2: string;
@@ -28,6 +30,8 @@ interface StyleProps {
 
 export const StyledRoot = styled.div`
 	background-color: ${(props: StyleProps) => props.theme.backgroundColor2};
+	border-right: 1px solid var(--joplin-divider-color);
+	box-sizing: border-box;
 	width: 100%;
 	height: 100%;
 	overflow-x: hidden;
@@ -37,38 +41,39 @@ export const StyledRoot = styled.div`
 `;
 
 export const StyledHeader = styled.div`
-	//height: ${(props: StyleProps) => props.theme.topRowHeight}px;
-	//text-decoration: none;
 	flex: 1;
 	box-sizing: border-box;
 	padding: ${(props: StyleProps) => props.theme.mainPadding}px;
-	padding-bottom: ${(props: StyleProps) => props.theme.mainPadding / 2}px;
+	padding-top: 6px;
+	padding-bottom: 6px;
 	display: flex;
 	align-items: center;
 	user-select: none;
 	text-transform: uppercase;
-	//cursor: pointer;
 	cursor: default;
-	transition: background 0.2s;
+	transition: background 0.15s ease;
 	&:hover {
 		background: ${(props: StyleProps) => props.theme.backgroundColorHover2};
 	}
 `;
 
 export const StyledHeaderIcon = styled.i`
-	font-size: ${(props: StyleProps) => props.theme.toolbarIconSize}px;
-	color: ${(props: StyleProps) => props.theme.color2};
-	margin-right: 8px;
+	font-size: 13px;
+	color: ${(props: StyleProps) => shim.isMac() ? props.theme.colorFaded2 : props.theme.color2};
+	margin-right: 7px;
 `;
 
 export const StyledAllNotesIcon = styled(StyledHeaderIcon)`
-	font-size: ${(props: StyleProps) => props.theme.toolbarIconSize * 0.8}px;
-	color: ${(props: StyleProps) => props.theme.colorFaded2};
-	margin-right: 8px;
+	font-size: 13px;
+	color: ${(props: StyleProps) => {
+		if (props.selected && usesAccentSelection(props)) return '#ffffff';
+		return shim.isMac() ? props.theme.selectedColor2 : props.theme.colorFaded2;
+	}};
+	margin-right: 7px;
 `;
 
 const usesAccentSelection = (props: StyleProps) => {
-	const selected = (props.theme.selectedColor2 || '').toLowerCase();
+	const selected = (props.theme.sidebarSelectedBackgroundColor || props.theme.selectedColor2 || '').toLowerCase();
 	return selected === '#007aff' || selected === '#0a84ff';
 };
 
@@ -83,6 +88,7 @@ export const StyledHeaderLabel = styled.span`
 function listItemTextColor(props: StyleProps) {
 	if (props.selected && usesAccentSelection(props)) return '#ffffff';
 	if (props.isConflictFolder) return props.theme.colorError2;
+	if (props.selected && props.theme.sidebarSelectedTextColor) return props.theme.sidebarSelectedTextColor;
 	if (props.isSpecialItem) return props.theme.colorFaded2;
 	if (props.selected && props.isPublished) return props.theme.color2;
 	if (props.isPublished) return props.theme.colorPublished2;
@@ -92,6 +98,7 @@ function listItemTextColor(props: StyleProps) {
 
 export const StyledListItemAnchor = styled.a`
 	font-size: ${(props: StyleProps) => shim.isMac() ? props.theme.fontSize : Math.round(props.theme.fontSize * 1.0833333)}px;
+	font-weight: ${(props: StyleProps) => props.selected ? 600 : 400};
 	letter-spacing: ${shim.isMac() ? '-0.006em' : 'normal'};
 	text-decoration: none;
 	color: ${(props: StyleProps) => listItemTextColor(props)};
@@ -106,9 +113,22 @@ export const StyledListItemAnchor = styled.a`
 	white-space: nowrap;
 	display: flex;
 	flex: 1;
+	min-width: 0;
+	overflow: hidden;
 	align-items: center;
 	user-select: none;
 	height: 100%;
+
+	> .title,
+	> .tag-label {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	> .note-count-label {
+		color: ${(props: StyleProps) => (props.selected && usesAccentSelection(props)) ? 'rgba(255, 255, 255, 0.85)' : props.theme.colorFaded2};
+	}
 
 	/* A different background color is already used to indicate focus for sidebar list items. */
 	&:focus-visible {
@@ -120,9 +140,7 @@ export const StyledShareIcon = styled.i`
 	margin-left: 8px;
 `;
 
-export const StyledSynchronizeButton = styled(Button)`
-	width: 100%;
-`;
+export const StyledSynchronizeButton = styled(Button)``;
 
 export const StyledAddButton = styled(Button)`
 	border: none;
@@ -136,6 +154,7 @@ export const StyledSyncReport = styled.div`
 	opacity: 0.5;
 	display: flex;
 	flex-direction: column;
+	align-self: stretch;
 	margin-left: 5px;
 	margin-right: 5px;
 	margin-bottom: 10px;

@@ -24,7 +24,7 @@ const renderer: ListRenderer = {
 
 	itemSize: {
 		width: 0,
-		height: 34,
+		height: 36,
 	},
 
 	itemCss: // css
@@ -32,13 +32,16 @@ const renderer: ListRenderer = {
 		& {
 			display: block;
 			box-sizing: border-box;
-			padding: 2px 6px;
+			padding: 1.5px 8px;
 		}
 
 		> .row {
 			display: flex;
 			height: 100%;
-			border-radius: 6px;
+			border-radius: 8px;
+			padding: 0 4px;
+			box-sizing: border-box;
+			transition: background-color 0.12s ease;
 
 			> .item {
 				display: flex;
@@ -46,7 +49,7 @@ const renderer: ListRenderer = {
 				box-sizing: border-box;
 				padding-left: 8px;
 				overflow: hidden;
-				opacity: 0.6;
+				opacity: 0.65;
 
 				> .content {
 					text-overflow: ellipsis;
@@ -56,6 +59,7 @@ const renderer: ListRenderer = {
 					> .checkbox > input {
 						padding: 0;
 						margin: 0;
+						accent-color: var(--joplin-selected-color2);
 					}
 				}
 			}
@@ -88,8 +92,12 @@ const renderer: ListRenderer = {
 		> .row.-selected,
 		> .row.-published.-selected,
 		> .row.-shared.-selected {
-			background-color: var(--joplin-selected-color);
-			color: var(--joplin-selected-text-color, var(--joplin-color));
+			background-color: var(--joplin-note-list-selected-background-color, var(--joplin-selected-color));
+			color: var(--joplin-note-list-selected-text-color, var(--joplin-color));
+
+			> .item[data-name="note.title"] {
+				font-weight: 600;
+			}
 		}
 
 		> .row.-shared {

@@ -558,6 +558,10 @@ export class Bridge {
 		return nativeTheme.shouldUseDarkColors;
 	}
 
+	public setNativeThemeSource(source: 'system' | 'light' | 'dark') {
+		nativeTheme.themeSource = source;
+	}
+
 	public addEventListener(name: string, fn: ()=> void) {
 		if (name === 'nativeThemeUpdated') {
 			nativeTheme.on('updated', fn);

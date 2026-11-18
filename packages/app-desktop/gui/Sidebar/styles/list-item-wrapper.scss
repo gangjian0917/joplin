@@ -16,12 +16,13 @@
 		content: '';
 		position: absolute;
 		z-index: 0;
-		top: 2px;
-		bottom: 2px;
+		top: 1.5px;
+		bottom: 1.5px;
 		left: 8px;
 		right: 8px;
-		border-radius: 6px;
+		border-radius: 8px;
 		pointer-events: none;
+		transition: background-color 0.12s ease;
 	}
 
 	> * {
@@ -36,7 +37,7 @@
 	}
 
 	&.-selected::before {
-		background: var(--joplin-selected-color2);
+		background: var(--joplin-sidebar-selected-background-color, var(--joplin-selected-color2));
 	}
 
 	// When multiple items are selected, show an outline (similar to the focus outline) to indicate
@@ -49,7 +50,7 @@
 			background-color: color-mix(
 				in srgb,
 				var(--outline-color) 12%,
-				var(--joplin-selected-color2) 92%
+				var(--joplin-sidebar-selected-background-color, var(--joplin-selected-color2)) 92%
 			);
 		}
 

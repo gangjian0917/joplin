@@ -94,20 +94,28 @@ const useContainerSize = (container: HTMLElement|null) => {
 const NavigatorComponent: React.FC<Props> = props => {
 	const route = props.route;
 	const screenInfo = props.screens[route?.routeName];
-	const [container, setContainer] = useState<HTMLElement|null>(null);
+	const [screenContainer, setScreenContainer] = useState<HTMLElement|null>(null);
 
 	useWindowTitleManager(screenInfo);
 	useWindowRefocusManager(route);
-	const size = useContainerSize(container);
+	const size = useContainerSize(screenContainer);
 
 	if (!route) throw new Error('Route must not be null');
 
 	const screenProps = route.props ? route.props : {};
 	const Screen = screenInfo.screen;
+	const showSubscreenTitleBar = route.routeName !== 'Main' && document.documentElement.classList.contains('mac-hidden-titlebar');
 
 	return (
-		<div ref={setContainer} style={props.style} className={props.className}>
-			<Screen style={size} {...screenProps} />
+		<div style={props.style} className={`navigator-root ${props.className || ''}`}>
+			{showSubscreenTitleBar && (
+				<div className='subscreen-titlebar'>
+					{screenInfo?.title?.() ?? ''}
+				</div>
+			)}
+			<div ref={setScreenContainer} className='navigator-screen-container'>
+				<Screen style={size} {...screenProps} />
+			</div>
 		</div>
 	);
 };

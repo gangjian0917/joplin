@@ -3,18 +3,24 @@ import { NoteBodyEditorProps } from '../../../utils/types';
 import { buildStyle } from '@joplin/lib/theme';
 
 export default function styles(props: NoteBodyEditorProps) {
-	const leftExtraToolbarContainerWidth = props.watchedNoteFiles.length > 0 ? 120 : 80;
-	return buildStyle(['TinyMCE', props.style.width, props.style.height, leftExtraToolbarContainerWidth], props.themeId, theme => {
+	const leftButtonCount = props.watchedNoteFiles.length > 0 ? 3 : 2;
+	return buildStyle(['TinyMCE', props.style.width, props.style.height, leftButtonCount], props.themeId, theme => {
+		const leftPadding = Math.max(4, theme.editorPaddingLeft - 4);
+		const leftExtraToolbarContainerWidth = leftPadding + leftButtonCount * theme.toolbarHeight + (leftButtonCount - 1) * 2 + 4;
+		const rightExtraToolbarContainerWidth = 82;
 		const extraToolbarContainer = {
 			boxSizing: 'content-box',
 			backgroundColor: theme.backgroundColor3,
+			borderTop: `1px solid ${theme.dividerColor}`,
 			display: 'flex',
 			flexDirection: 'row',
+			alignItems: 'center',
 			position: 'absolute',
 			height: theme.toolbarHeight,
 			zIndex: 2,
 			top: 0,
-			padding: theme.toolbarPadding,
+			paddingTop: theme.toolbarPadding,
+			paddingBottom: theme.toolbarPadding,
 		};
 
 		return {
@@ -34,21 +40,25 @@ export default function styles(props: NoteBodyEditorProps) {
 			},
 			rootStyle: {
 				position: 'relative',
-				width: props.style.width,
+				marginLeft: -theme.editorPaddingLeft,
+				width: `calc(${props.style.width} + ${theme.editorPaddingLeft}px)`,
 				height: props.style.height,
 			},
 			leftExtraToolbarContainer: {
 				...extraToolbarContainer,
-				width: leftExtraToolbarContainerWidth,
+				width: leftExtraToolbarContainerWidth - leftPadding - 4,
+				paddingLeft: leftPadding,
+				paddingRight: 4,
+				gap: 2,
 				left: 0,
 			},
 			rightExtraToolbarContainer: {
 				...extraToolbarContainer,
-				alignItems: 'center',
 				justifyContent: 'flex-end',
-				width: 70,
+				width: rightExtraToolbarContainerWidth - 20,
 				right: 0,
-				paddingRight: theme.mainPadding,
+				paddingLeft: 6,
+				paddingRight: 14,
 			},
 			extraToolbarButton: {
 				display: 'flex',

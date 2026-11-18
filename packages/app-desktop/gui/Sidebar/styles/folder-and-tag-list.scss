@@ -1,4 +1,21 @@
 
+.sidebar-titlebar-drag {
+	display: none;
+}
+
+html.mac-hidden-titlebar .sidebar-titlebar-drag {
+	display: block;
+	flex: 0 0 44px;
+	height: 44px;
+	-webkit-app-region: drag;
+}
+
+html.mac-hidden-titlebar.is-fullscreen .sidebar-titlebar-drag {
+	flex: 0 0 6px;
+	height: 6px;
+	-webkit-app-region: no-drag;
+}
+
 .folder-and-tag-list {
 	position: relative;
 	overflow: hidden;
@@ -10,5 +27,71 @@
 		position: absolute;
 		left: 0;
 		right: 0;
+	}
+}
+
+.folder-icon-wrapper {
+	display: flex;
+	align-items: center;
+	margin-right: 7px;
+}
+
+.tag-compact-icon {
+	font-size: 13px;
+	opacity: 0.72;
+}
+
+.sidebar.-compact {
+	.list-item-wrapper {
+		padding-left: 0;
+		padding-right: 0;
+		justify-content: center;
+
+		&::before {
+			left: 4px;
+			right: 4px;
+			border-radius: 8px;
+		}
+	}
+
+	.sidebar-expand-link,
+	.sidebar-header-button {
+		display: none;
+	}
+
+	.sidebar-header {
+		padding-left: 0;
+		padding-right: 0;
+		justify-content: center;
+	}
+
+	.sidebar-header-icon {
+		margin-right: 0;
+		font-size: 14px;
+	}
+
+	.sidebar-header-label {
+		display: none;
+	}
+
+	.list-item {
+		justify-content: center;
+
+		> .title,
+		> .tag-label,
+		> .note-count-label,
+		> .fa-share-alt,
+		> .fa-globe {
+			display: none;
+		}
+	}
+
+	.folder-icon-wrapper,
+	.icon-notes {
+		margin-right: 0;
+	}
+
+	.sidebar-spacer-item {
+		height: 14px;
 	}
 }

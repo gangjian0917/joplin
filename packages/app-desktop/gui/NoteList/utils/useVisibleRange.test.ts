@@ -6,9 +6,13 @@ describe('useVisibleRange', () => {
 
 	test('should calculate indexes', () => {
 
-		// IN: scrollTop, listSize, itemSize, noteCount, flow
+		// IN: itemsPerLine, scrollTop, listSize, itemSize, noteCount
 		//
-		// OUT: [itemsPerLine, startNoteIndex, endNoteIndex, startLineIndex, endLineIndex, totalLineCount, visibleItemCount]
+		// OUT: [startNoteIndex, endNoteIndex, startLineIndex, endLineIndex, totalLineCount, visibleItemCount]
+		//
+		// startNoteIndex/endNoteIndex cover the visible lines extended by
+		// OVERSCAN_LINES above and below (clamped to the note count); the line
+		// indexes describe the strictly visible window.
 
 		const testCases: [number, number, Size, Size, number, ReturnType<typeof useVisibleRange>][] = [
 			[
@@ -17,7 +21,7 @@ describe('useVisibleRange', () => {
 				{ width: 100, height: 400 },
 				{ width: 100, height: 100 },
 				8,
-				[1, 5, 1, 5, 8, 5],
+				[0, 7, 1, 5, 8, 5],
 			],
 			[
 				2,
@@ -25,7 +29,7 @@ describe('useVisibleRange', () => {
 				{ width: 220, height: 380 },
 				{ width: 100, height: 100 },
 				12,
-				[2, 9, 1, 4, 6, 8],
+				[0, 11, 1, 4, 6, 8],
 			],
 			[
 				2,
@@ -33,7 +37,7 @@ describe('useVisibleRange', () => {
 				{ width: 220, height: 300 },
 				{ width: 100, height: 100 },
 				9,
-				[0, 7, 0, 3, 5, 8],
+				[0, 8, 0, 3, 5, 8],
 			],
 			[
 				4,
@@ -41,7 +45,7 @@ describe('useVisibleRange', () => {
 				{ width: 410, height: 450 },
 				{ width: 100, height: 100 },
 				30,
-				[0, 19, 0, 4, 8, 20],
+				[0, 29, 0, 4, 8, 20],
 			],
 		];
 

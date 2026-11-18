@@ -105,10 +105,12 @@ const StyledUserWebviewDialogContainer = styled.div`
 	box-sizing: border-box;
 `;
 
+const sidebarMinWidth = shim.isMac() ? 78 : undefined;
+
 const defaultLayout: LayoutItem = {
 	key: 'root',
 	children: [
-		{ key: 'sideBar', width: 250 },
+		{ key: 'sideBar', width: 250, ...(sidebarMinWidth ? { minWidth: sidebarMinWidth } : {}) },
 		{ key: 'noteList', width: 250 },
 		{ key: 'editor', flexible: true },
 		{ key: 'chatPanel', width: 340, visible: false },
@@ -232,6 +234,10 @@ class MainScreenComponent extends React.Component<Props, State> {
 					if (editor && !editor.flexible) {
 						editor.flexible = true;
 						delete editor.width;
+					}
+					if (sidebarMinWidth) {
+						const sideBar = findItemByKey(draft, 'sideBar');
+						if (sideBar) sideBar.minWidth = sidebarMinWidth;
 					}
 				});
 			}
@@ -680,7 +686,7 @@ class MainScreenComponent extends React.Component<Props, State> {
 		}
 
 		return (
-			<div style={styles.messageBox}>
+			<div className='main-screen-message-box' style={styles.messageBox}>
 				<span
 					style={theme.textStyle}
 					role='alert'

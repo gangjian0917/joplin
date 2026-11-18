@@ -37,6 +37,7 @@ interface Props {
 	collapsedFolderIds: string[];
 	folderHeaderIsExpanded: boolean;
 	tagHeaderIsExpanded: boolean;
+	isCompact?: boolean;
 }
 
 
@@ -63,6 +64,7 @@ const FolderAndTagList: React.FC<Props> = props => {
 		selectedIndexes,
 		listItems,
 		containerRef: listContainerRef,
+		isCompact: !!props.isCompact,
 	});
 
 	const onKeyEventHandler = useOnSidebarKeyDownHandler({
@@ -84,7 +86,7 @@ const FolderAndTagList: React.FC<Props> = props => {
 	const listHeight = useElementHeight(itemListContainer);
 	const listStyle = useMemo(() => ({ height: listHeight }), [listHeight]);
 
-	const onRenderContentWrapper = useOnRenderListWrapper({ allFoldersCollapsed, selectedIndex, onKeyDown: onKeyEventHandler, hasSubFolders });
+	const onRenderContentWrapper = useOnRenderListWrapper({ allFoldersCollapsed, selectedIndex, onKeyDown: onKeyEventHandler, hasSubFolders, isCompact: !!props.isCompact });
 
 	return (
 		<div
@@ -93,6 +95,7 @@ const FolderAndTagList: React.FC<Props> = props => {
 		>
 			<ItemList
 				className='items'
+				autoHideScrollbar={true}
 				ref={itemListRef}
 				style={listStyle}
 

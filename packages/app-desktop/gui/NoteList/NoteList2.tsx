@@ -27,6 +27,7 @@ import { _ } from '@joplin/lib/locale';
 import useActiveDescendantId from './utils/useActiveDescendantId';
 import getNoteElementIdFromJoplinId from '../NoteListItem/utils/getNoteElementIdFromJoplinId';
 import useFocusVisible from './utils/useFocusVisible';
+import useAutoHideScrollbar from '../hooks/useAutoHideScrollbar';
 import { stateUtils } from '@joplin/lib/reducer';
 import { connect } from 'react-redux';
 import useOnNoteDoubleClick from './utils/useOnNoteDoubleClick';
@@ -47,6 +48,7 @@ const NoteList = (props: Props) => {
 	const listRef = useRef<HTMLDivElement>(null);
 	const itemRefs = useRef<Record<string, HTMLDivElement>>({});
 	const listRenderer = props.listRenderer;
+	useAutoHideScrollbar(listRef);
 
 	const itemSize: Size = useMemo(() => {
 		return {
@@ -71,7 +73,7 @@ const NoteList = (props: Props) => {
 		listRef,
 	);
 
-	const [startNoteIndex, endNoteIndex, startLineIndex, endLineIndex, totalLineCount, visibleItemCount] = useVisibleRange(
+	const [startNoteIndex, endNoteIndex, , , totalLineCount, visibleItemCount] = useVisibleRange(
 		itemsPerLine,
 		scrollTop,
 		props.size,
@@ -140,7 +142,14 @@ const NoteList = (props: Props) => {
 	}, [focusNote]);
 
 	const selectedNoteId = props.selectedNoteIds.length === 1 ? props.selectedNoteIds[0] : '';
-	const targetIndex = props.notes.findIndex(note => note.id === selectedNoteId);
+	// Map lookup instead of findIndex: this runs on every render and with tens
+	// of thousands of notes the linear scan was a per-render O(N) cost.
+	const noteIndexById = useMemo(() => {
+		const output = new Map<string, number>();
+		for (let i = 0; i < props.notes.length; i++) output.set(props.notes[i].id, i);
+		return output;
+	}, [props.notes]);
+	const targetIndex = selectedNoteId ? noteIndexById.get(selectedNoteId) ?? -1 : -1;
 	useAutoScroll(selectedNoteId, props.selectedFolderId, targetIndex, makeItemIndexVisible);
 
 	const onItemContextMenu = useOnContextMenu(
@@ -269,8 +278,11 @@ const NoteList = (props: Props) => {
 		return output;
 	};
 
-	const topFillerHeight = startLineIndex * itemSize.height;
-	const bottomFillerHeight = (totalLineCount - endLineIndex - 1) * itemSize.height;
+	// The rendered range extends OVERSCAN_LINES above/below the visible window
+	// (see useVisibleRange), so the fillers must shrink accordingly to keep the
+	// total scroll height unchanged.
+	const topFillerHeight = Math.max(0, (startNoteIndex / itemsPerLine) * itemSize.height);
+	const bottomFillerHeight = Math.max(0, (totalLineCount - endNoteIndex / itemsPerLine - 1) * itemSize.height);
 
 	const fillerBaseStyle = useMemo(() => {
 		// return { width: 'auto', border: '1px solid red', backgroundColor: 'green' };

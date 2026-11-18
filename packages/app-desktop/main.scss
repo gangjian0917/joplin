@@ -63,6 +63,27 @@ a {
 	--scrollbar-thumb-color-hover: var(--joplin-scrollbar-thumb-color-hover);
 }
 
+// Auto-hide scrollbars: the thumb is transparent while the container is at
+// rest and fades in while scrolling. JS adds the -scrolling class on the
+// scroll container (see useAutoHideScrollbar).
+.-auto-hide-scrollbar::-webkit-scrollbar-thumb,
+.-auto-hide-scrollbar::-webkit-scrollbar-thumb:hover {
+	background: transparent;
+	transition: background 0.4s ease;
+}
+
+.-auto-hide-scrollbar.-scrolling::-webkit-scrollbar-thumb,
+.-auto-hide-scrollbar.-scrolling::-webkit-scrollbar-thumb:hover {
+	background: var(--scrollbar-thumb-color-hover);
+}
+
+// Uses a scrollbar with secondary colors. Should be used for content with
+// background matching joplin-background-color2.
+._scrollbar2 {
+	--scrollbar-thumb-color: var(--joplin-scrollbar-thumb-color2);
+	--scrollbar-thumb-color-hover: var(--joplin-scrollbar-thumb-color-hover2);
+}
+
 // Uses a scrollbar with secondary colors. Should be used for content with
 // background matching joplin-background-color2.
 ._scrollbar2 {
@@ -344,8 +365,89 @@ mark {
 	unicode-bidi: plaintext;
 }
 
+.pane-resize-handle-right {
+	z-index: 10;
+
+	&::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 4px;
+		width: 2px;
+		background-color: transparent;
+		transition: background-color 0.15s ease;
+	}
+
+	&:hover::after,
+	&:active::after {
+		background-color: var(--joplin-selected-color2);
+	}
+}
+
+.pane-resize-handle-bottom {
+	z-index: 10;
+
+	&::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 4px;
+		height: 2px;
+		background-color: transparent;
+		transition: background-color 0.15s ease;
+	}
+
+	&:hover::after,
+	&:active::after {
+		background-color: var(--joplin-selected-color2);
+	}
+}
+
 // Legacy CodeMirror editor overrides
 .CodeMirror5 > .CodeMirror {
 	height: 100%;
 	width: 100%;
+}
+
+.navigator-root {
+	display: flex;
+	flex-direction: column;
+}
+
+.navigator-screen-container {
+	flex: 1;
+	min-height: 0;
+	width: 100%;
+	overflow: hidden;
+}
+
+.subscreen-titlebar {
+	flex: 0 0 44px;
+	height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--joplin-background-color3);
+	border-bottom: 1px solid var(--joplin-divider-color);
+	color: var(--joplin-color);
+	font-weight: 600;
+	font-size: 13px;
+	user-select: none;
+	-webkit-app-region: drag;
+}
+
+html.mac-hidden-titlebar.is-fullscreen .subscreen-titlebar {
+	display: none;
+}
+
+html.mac-hidden-titlebar:not(.is-fullscreen) .main-screen-message-box {
+	padding-left: 80px !important;
+	-webkit-app-region: drag;
+
+	a,
+	button {
+		-webkit-app-region: no-drag;
+	}
 }

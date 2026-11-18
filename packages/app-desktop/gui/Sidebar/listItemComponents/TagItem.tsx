@@ -1,6 +1,6 @@
 import Setting from '@joplin/lib/models/Setting';
 import * as React from 'react';
-import { useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { StyledListItemAnchor, StyledSpanFix } from '../styles';
 import { TagsWithNoteCountEntity } from '@joplin/lib/services/database/types';
 import BaseModel, { ModelType } from '@joplin/lib/BaseModel';
@@ -20,6 +20,7 @@ interface Props {
 
 	itemCount: number;
 	index: number;
+	isCompact?: boolean;
 }
 
 const TagItem = (props: Props) => {
@@ -54,10 +55,12 @@ const TagItem = (props: Props) => {
 			<StyledListItemAnchor
 				className="list-item"
 				selected={selectionState.selected}
+				title={props.isCompact ? props.label : undefined}
 				data-id={tag.id}
 				data-type={BaseModel.TYPE_TAG}
 				onClick={onClickHandler}
 			>
+				{props.isCompact ? <i aria-hidden='true' className='fas fa-tag tag-compact-icon'/> : null}
 				<StyledSpanFix className="tag-label">{props.label}</StyledSpanFix>
 				{noteCount}
 			</StyledListItemAnchor>
@@ -65,4 +68,4 @@ const TagItem = (props: Props) => {
 	);
 };
 
-export default TagItem;
+export default memo(TagItem);

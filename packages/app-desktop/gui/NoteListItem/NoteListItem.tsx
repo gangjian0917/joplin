@@ -13,6 +13,7 @@ import NoteLockSession from '@joplin/lib/services/noteLock/NoteLockSession';
 import bridge from '../../services/bridge';
 import { _ } from '@joplin/lib/locale';
 import useRenderedNote from './utils/useRenderedNote';
+import { renderNotePlaceholderHtml } from './utils/noteHtmlCache';
 import { Dispatch } from 'redux';
 import getNoteElementIdFromJoplinId from './utils/getNoteElementIdFromJoplinId';
 import { HighlightedWord } from '@joplin/lib/reducer';
@@ -91,10 +92,15 @@ const NoteListItem = (props: NoteItemProps, ref: LegacyRef<HTMLDivElement>) => {
 
 	const displayTitle = useMemo(() => Note.displayTitle(props.note), [props.note]);
 
+	// Synchronously renderable fallback shown until the async render pipeline
+	// produces the real HTML. See useItemElement.
+	const placeholderHtml = useMemo(() => renderNotePlaceholderHtml(props.note, props.isSelected), [props.note, props.isSelected]);
+
 	useItemElement(
 		rootElement,
 		noteId,
 		renderedNote ? renderedNote.html : '',
+		placeholderHtml,
 		props.focusVisible,
 		props.style,
 		props.itemSize,

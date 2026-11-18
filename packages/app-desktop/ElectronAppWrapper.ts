@@ -267,6 +267,10 @@ export default class ElectronAppWrapper {
 			height: windowState.height,
 			minWidth: 100,
 			minHeight: 100,
+			...(shim.isMac() ? {
+				titleBarStyle: 'hiddenInset' as const,
+				trafficLightPosition: { x: 13, y: 16 },
+			} : {}),
 			// A backgroundColor is needed to enable sub-pixel rendering.
 			// Based on https://www.electronjs.org/docs/latest/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do,
 			// this needs to be a non-transparent color:
@@ -356,6 +360,20 @@ export default class ElectronAppWrapper {
 		this.win_.on('show', () => {
 			this.mainWindowHidden_ = false;
 		});
+
+		if (shim.isMac()) {
+			this.win_.on('enter-full-screen', () => {
+				this.win_?.webContents.send('window-fullscreen-changed', true);
+			});
+
+			this.win_.on('leave-full-screen', () => {
+				this.win_?.webContents.send('window-fullscreen-changed', false);
+			});
+
+			this.win_.webContents.on('did-finish-load', () => {
+				this.win_?.webContents.send('window-fullscreen-changed', this.win_.isFullScreen());
+			});
+		}
 
 		void this.win_.loadURL(url.format({
 			pathname: path.join(__dirname, 'index.html'),

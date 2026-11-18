@@ -140,7 +140,7 @@ const createTheme = (theme: EditorTheme): Extension[] => {
 		},
 
 		'& .cm-codeBlock': {
-			backgroundColor: 'rgba(155, 155, 155, 0.07)',
+			backgroundColor: isDarkTheme ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.035)',
 			...monospaceStyle,
 		},
 
@@ -152,7 +152,8 @@ const createTheme = (theme: EditorTheme): Extension[] => {
 		'& .cm-inlineCode': {
 			borderWidth: '1px',
 			borderStyle: 'solid',
-			borderColor: isDarkTheme ? 'rgba(200, 200, 200, 0.5)' : 'rgba(100, 100, 100, 0.5)',
+			borderColor: isDarkTheme ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.1)',
+			backgroundColor: isDarkTheme ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
 			borderRadius: '4px',
 
 			...monospaceStyle,

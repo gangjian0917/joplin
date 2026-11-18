@@ -34,6 +34,9 @@ interface StyleProps {
 		backgroundColorHover5: string;
 		backgroundColorHoverDim3: string;
 		borderColor4: string;
+		dividerColor: string;
+		backgroundColorTransparent2: string;
+		backgroundColorHover2: string;
 		color: string;
 		color2: string;
 		color3: string;
@@ -103,13 +106,14 @@ const StyledButtonBase = styled.button`
 	${(props: Props) => !isSquare(props) ? 'min-width: 100px;' : ''}
 	${(props: Props) => isSquare(props) ? `max-width: ${buttonSizePx(props)}px;` : ''}
 	box-sizing: border-box;
-	border-radius: 3px;
+	border-radius: 7px;
 	border-style: solid;
 	border-width: 1px;
 	padding: 0 ${(props: Props) => isSquare(props) ? 4 : 14}px;
 	justify-content: center;
 	opacity: ${(props: Props) => props.disabled ? 0.5 : 1};
 	user-select: none;
+	transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, opacity 0.12s ease;
 	${(props: Props) => props.fontSize ? `font-size: ${props.fontSize}px;` : ''}
 `;
 
@@ -202,28 +206,29 @@ const StyledButtonRecommended = styled(StyledButtonBase)`
 `;
 
 const StyledButtonSidebarSecondary = styled(StyledButtonBase)`
-	background: none;
-	border-color: ${(props: StyleProps) => props.theme.color2};
+	background-color: ${(props: StyleProps) => props.theme.backgroundColorTransparent2};
+	border-color: ${(props: StyleProps) => props.theme.dividerColor};
 	color: ${(props: StyleProps) => props.theme.color2};
+	font-weight: 500;
 
 	&:hover {
-		color: ${(props: StyleProps) => props.theme.colorHover2};
-		border-color: ${(props: StyleProps) => props.theme.colorHover2};
-		background: none;
+		color: ${(props: StyleProps) => props.theme.color2};
+		border-color: ${(props: StyleProps) => props.theme.dividerColor};
+		background-color: ${(props: StyleProps) => props.theme.backgroundColorHover2};
 
 		${StyledTitle} {
-			color: ${(props: StyleProps) => props.theme.colorHover2};
+			color: ${(props: StyleProps) => props.theme.color2};
 		}
 
 		${StyledIcon} {
-			color: ${(props: StyleProps) => props.theme.colorHover2};
+			color: ${(props: StyleProps) => props.theme.color2};
 		}
 	}
 
 	&:active {
 		color: ${(props: StyleProps) => props.theme.colorActive2};
-		border-color: ${(props: StyleProps) => props.theme.colorActive2};
-		background: none;
+		border-color: ${(props: StyleProps) => props.theme.dividerColor};
+		background-color: ${(props: StyleProps) => props.theme.backgroundColorTransparent2};
 
 		${StyledTitle} {
 			color: ${(props: StyleProps) => props.theme.colorActive2};

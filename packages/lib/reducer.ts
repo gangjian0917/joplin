@@ -1180,6 +1180,9 @@ const reducer = produce((draft: Draft<State> = defaultState, action: any) => {
 		case 'NOTE_UPDATE_ONE':
 			{
 				const modNote: NoteEntity = action.note;
+				// Built once per action instead of doing a draft.folders.find()
+				// (O(folderCount)) per note in the window's note array.
+				const folderById = new Map(draft.folders.map(f => [f.id, f] as const));
 				const handleWindowState = (windowDraft: Draft<WindowState>) => {
 					const isViewingAllNotes = (windowDraft.notesParentType === 'SmartFilter' && windowDraft.selectedSmartFilterId === ALL_NOTES_FILTER_ID);
 					const isViewingConflictFolder = windowDraft.notesParentType === 'Folder' && windowDraft.selectedFolderId === Folder.conflictFolderId();
@@ -1187,7 +1190,7 @@ const reducer = produce((draft: Draft<State> = defaultState, action: any) => {
 					const noteIsInCurrentView = function(note: NoteEntity, folderId: string) {
 						if (note.is_conflict) return isViewingConflictFolder;
 						if (isViewingAllNotes) return true;
-						const noteDisplayParentId = getDisplayParentId(note, draft.folders.find(f => f.id === note.parent_id));
+						const noteDisplayParentId = getDisplayParentId(note, folderById.get(note.parent_id));
 						return folderId === noteDisplayParentId;
 					};
 
@@ -1198,7 +1201,7 @@ const reducer = produce((draft: Draft<State> = defaultState, action: any) => {
 					for (let i = 0; i < newNotes.length; i++) {
 						const n = newNotes[i];
 						if (n.id === modNote.id) {
-							const previousDisplayParentId = ('parent_id' in n) ? getDisplayParentId(n, draft.folders.find(f => f.id === n.parent_id)) : '';
+							const previousDisplayParentId = ('parent_id' in n) ? getDisplayParentId(n, folderById.get(n.parent_id)) : '';
 							if (n.is_conflict && !modNote.is_conflict) {
 								// Note was a conflict but was moved outside of
 								// the conflict folder

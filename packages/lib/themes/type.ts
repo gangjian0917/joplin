@@ -29,6 +29,8 @@ export interface Theme {
 	backgroundColorTransparent2: string; // Used for dimmed region outside modals
 	color2: string;
 	selectedColor2: string;
+	sidebarSelectedBackgroundColor?: string;
+	sidebarSelectedTextColor?: string;
 	colorError2: string;
 	colorPublished2?: string; // Published items on the sidebar
 	colorWarn2: string; // On a darker background (eg. sidebar)
@@ -38,6 +40,8 @@ export interface Theme {
 	// It's dark text over gray background.
 	backgroundColor3: string;
 	backgroundColorHover3: string;
+	noteListSelectedBackgroundColor: string;
+	noteListSelectedTextColor?: string;
 	color3: string;
 
 	// Color scheme "4" is used for secondary-style buttons. It makes a white

@@ -294,18 +294,10 @@ export default class BaseApplication {
 			});
 		} else {
 			const lastSelectedNoteIds = stateUtils.lastSelectedNoteIds(state);
-			const foundIds = [];
-			for (let i = 0; i < lastSelectedNoteIds.length; i++) {
-				const noteId = lastSelectedNoteIds[i];
-				let found = false;
-				for (let j = 0; j < notes.length; j++) {
-					if (notes[j].id === noteId) {
-						found = true;
-						break;
-					}
-				}
-				if (found) foundIds.push(noteId);
-			}
+			// Set lookup instead of a nested loop — with tens of thousands of
+			// notes the O(ids * notes) rescan made every folder switch slower.
+			const noteIdsInFolder = new Set(notes.map(n => n.id));
+			const foundIds = lastSelectedNoteIds.filter(id => noteIdsInFolder.has(id));
 
 			let selectedNoteId = null;
 			if (foundIds.length) {

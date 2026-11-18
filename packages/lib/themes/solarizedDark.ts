@@ -22,6 +22,8 @@ const theme: Theme = {
 
 	backgroundColor3: '#012732',
 	backgroundColorHover3: '#2aa19870',
+	noteListSelectedBackgroundColor: '#2aa19830',
+	noteListSelectedTextColor: '#eee8d5',
 	color3: '#93a1a1',
 
 	backgroundColor4: '#073642',

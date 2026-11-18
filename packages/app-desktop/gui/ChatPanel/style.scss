@@ -18,9 +18,23 @@
 	display: flex;
 	flex-direction: row;
 	align-items: center;
+	min-height: 44px;
+	box-sizing: border-box;
 	padding: 6px 10px;
 	border-bottom: 1px solid var(--joplin-divider-color);
 	font-weight: 600;
+}
+
+html.mac-hidden-titlebar .chat-panel > .header {
+	-webkit-app-region: drag;
+
+	button {
+		-webkit-app-region: no-drag;
+	}
+}
+
+html.mac-hidden-titlebar:not(.is-fullscreen) .is-leftmost-pane .chat-panel > .header {
+	padding-left: 78px;
 }
 
 .chat-panel-header {

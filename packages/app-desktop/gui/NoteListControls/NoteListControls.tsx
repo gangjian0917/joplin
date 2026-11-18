@@ -1,13 +1,12 @@
 import { AppState } from '../../app.reducer';
 import * as React from 'react';
-import { useEffect, useRef, useMemo, useContext } from 'react';
-import SearchBar from '../SearchBar/SearchBar';
+import { useEffect, useRef, useContext } from 'react';
+import SearchBar, { SearchBarHandle } from '../SearchBar/SearchBar';
 import Button, { ButtonLevel, ButtonSize, buttonSizePx } from '../Button/Button';
 import CommandService from '@joplin/lib/services/CommandService';
 import { runtime as focusSearchRuntime } from './commands/focusSearch';
 import Note from '@joplin/lib/models/Note';
 import { notesSortOrderNextField } from '@joplin/lib/services/sortOrder/notesSortOrderUtils';
-import { _ } from '@joplin/lib/locale';
 import { connect } from 'react-redux';
 import styled from 'styled-components';
 import stateToWhenClauseContext from '../../services/commands/stateToWhenClauseContext';
@@ -27,140 +26,122 @@ interface Props {
 	newNoteButtonEnabled: boolean;
 	newTodoButtonEnabled: boolean;
 	setNewNoteButtonElement: React.Dispatch<React.SetStateAction<Element>>;
-	lineCount: number;
 	breakpoint: number;
 	dynamicBreakpoints: Breakpoints;
 	buttonSize: ButtonSize;
 	padding: number;
-	buttonVerticalGap: number;
 }
 
 interface StyleProps {
 	theme: { backgroundColor3: string };
 	padding?: number;
-	buttonVerticalGap?: number;
 	size?: ButtonSize;
 }
 
 const StyledRoot = styled.div`
 	box-sizing: border-box;
 	display: flex;
-	flex-direction: column;
-	padding: ${(props: StyleProps) => props.padding}px;
+	flex-direction: row;
+	align-items: center;
+	height: 44px;
+	padding: 0 ${(props: StyleProps) => props.padding}px;
 	background-color: ${(props: StyleProps) => props.theme.backgroundColor3};
-	gap: ${(props: StyleProps) => props.buttonVerticalGap}px;
+	border-bottom: 1px solid var(--joplin-divider-color);
+	column-gap: 4px;
+
+	html.mac-hidden-titlebar & {
+		-webkit-app-region: drag;
+	}
+
+	html.mac-hidden-titlebar & button,
+	html.mac-hidden-titlebar & input,
+	html.mac-hidden-titlebar & a,
+	html.mac-hidden-titlebar & [role="button"] {
+		-webkit-app-region: no-drag;
+	}
+
+	html.mac-hidden-titlebar:not(.is-fullscreen) .is-leftmost-pane & {
+		padding-left: 78px;
+	}
 `;
 
-const StyledButton = styled(Button)`
-	width: auto;
-	height: 26px;
-	min-height: 26px;
-	min-width: 37px;
-	max-width: none;
+const StyledIconButton = styled(Button)`
+	width: 28px;
+	height: 28px;
+	min-height: 28px;
+	max-height: 28px;
+	min-width: 28px;
+	padding: 0;
+	border: none;
+	border-radius: 6px;
+	background-color: transparent;
 	white-space: nowrap;
 
-  .fa, .fas {
-    font-size: 11px;
-  }
+	.fa, .fas, .far {
+		font-size: 13px;
+		color: var(--joplin-color3);
+	}
+
+	&:not(:disabled):hover {
+		background-color: var(--joplin-background-color-hover3);
+	}
+
+	&:not(:disabled):active {
+		background-color: var(--joplin-background-color-active3);
+		transform: scale(0.96);
+	}
 `;
 
 const StyledPairButtonL = styled(Button)`
-	border-radius: 3px 0 0 3px;
+	border-radius: 6px 0 0 6px;
+	border-color: var(--joplin-divider-color);
+	background-color: var(--joplin-background-color);
 	min-width: ${(props: StyleProps) => buttonSizePx(props)}px;
 	max-width: ${(props: StyleProps) => buttonSizePx(props)}px;
+
+	.icon {
+		font-size: 12px;
+		color: var(--joplin-color3);
+	}
+
+	&:not(:disabled):hover {
+		background-color: var(--joplin-background-color-hover3);
+	}
 `;
 
 const StyledPairButtonR = styled(Button)`
-	min-width: 8px;
-	border-radius: 0 3px 3px 0;
+	min-width: 18px;
+	padding: 0 5px;
+	border-radius: 0 6px 6px 0;
+	border-color: var(--joplin-divider-color);
 	border-width: 1px 1px 1px 0;
+	background-color: var(--joplin-background-color);
 	width: auto;
-`;
 
-const TopRow = styled.div`
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 8px;
-`;
+	.icon {
+		font-size: 11px;
+		color: var(--joplin-color3);
+	}
 
-const BottomRow = styled.div`
-	display: flex;
-	flex-direction: row;
-	flex: 1 1 auto;
-	gap: 8px;
+	&:not(:disabled):hover {
+		background-color: var(--joplin-background-color-hover3);
+	}
 `;
 
 const SortOrderButtonsContainer = styled.div`
   display: flex;
   flex-direction: row;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
+  margin-left: 2px;
 `;
 
 function NoteListControls(props: Props) {
 	const searchBarRef = useRef(null);
-	const newTodoButtonRef = useRef(null);
 	const noteControlsRef = useRef(null);
-	const searchAndSortRef = useRef(null);
-
-	const breakpoint = props.breakpoint;
-	const dynamicBreakpoints = props.dynamicBreakpoints;
-	const lineCount = props.lineCount;
-
-	const noteButtonText = useMemo(() => {
-		if (breakpoint === dynamicBreakpoints.Sm) {
-			return '';
-		} else if (breakpoint === dynamicBreakpoints.Md) {
-			return _('note');
-		} else {
-			return _('New note');
-		}
-	}, [breakpoint, dynamicBreakpoints]);
-
-	const todoButtonText = useMemo(() => {
-		if (breakpoint === dynamicBreakpoints.Sm) {
-			return '';
-		} else if (breakpoint === dynamicBreakpoints.Md) {
-			return _('to-do');
-		} else {
-			return _('New to-do');
-		}
-	}, [breakpoint, dynamicBreakpoints]);
-
-	const noteIcon = useMemo(() => {
-		if (breakpoint === dynamicBreakpoints.Sm) {
-			return 'icon-note';
-		} else {
-			return 'fas fa-plus';
-		}
-	}, [breakpoint, dynamicBreakpoints]);
-
-	const todoIcon = useMemo(() => {
-		if (breakpoint === dynamicBreakpoints.Sm) {
-			return 'far fa-check-square';
-		} else {
-			return 'fas fa-plus';
-		}
-	}, [breakpoint, dynamicBreakpoints]);
-
-	const showTooltip = useMemo(() => {
-		if (breakpoint === dynamicBreakpoints.Sm) {
-			return true;
-		} else {
-			return false;
-		}
-	}, [breakpoint, dynamicBreakpoints.Sm]);
+	const searchBarHandleRef = useRef<SearchBarHandle | null>(null);
 
 	useEffect(() => {
-		if (lineCount === 1) {
-			noteControlsRef.current.style.flexDirection = 'row';
-			searchAndSortRef.current.style.flex = '2 1 50%';
-		} else {
-			noteControlsRef.current.style.flexDirection = 'column';
-		}
-	}, [lineCount]);
-
-	useEffect(() => {
-		CommandService.instance().registerRuntime('focusSearch', focusSearchRuntime(searchBarRef));
+		CommandService.instance().registerRuntime('focusSearch', focusSearchRuntime(searchBarRef, () => searchBarHandleRef.current?.expand()));
 
 		return function() {
 			CommandService.instance().unregisterRuntime('focusSearch');
@@ -220,61 +201,57 @@ function NoteListControls(props: Props) {
 		if (!props.showNewNoteButtons) return null;
 
 		return (
-			<TopRow className="new-note-todo-buttons">
-				<StyledButton
+			<>
+				<StyledIconButton
 					ref={(el: Element) => {
 						props.setNewNoteButtonElement(el);
 					}}
 					className="new-note-button"
-					tooltip={ showTooltip ? CommandService.instance().label('newNote') : '' }
-					iconName={noteIcon}
-					title={_('%s', noteButtonText)}
-					level={ButtonLevel.Primary}
+					tooltip={CommandService.instance().label('newNote')}
+					iconName='fas fa-pen'
+					level={ButtonLevel.Tertiary}
 					size={props.buttonSize}
 					onClick={onNewNoteButtonClick}
 					disabled={!props.newNoteButtonEnabled}
 				/>
-				<StyledButton ref={newTodoButtonRef}
+				<StyledIconButton
 					className="new-todo-button"
-					tooltip={ showTooltip ? CommandService.instance().label('newTodo') : '' }
-					iconName={todoIcon}
-					title={_('%s', todoButtonText)}
-					level={ButtonLevel.Secondary}
+					tooltip={CommandService.instance().label('newTodo')}
+					iconName='far fa-check-square'
+					level={ButtonLevel.Tertiary}
 					size={props.buttonSize}
 					onClick={onNewTodoButtonClick}
 					disabled={!props.newTodoButtonEnabled}
 				/>
-			</TopRow>
+			</>
 		);
 	}
 
 	const windowId = useContext(WindowIdContext);
 	return (
-		<StyledRoot ref={noteControlsRef} padding={props.padding} buttonVerticalGap={props.buttonVerticalGap}>
+		<StyledRoot ref={noteControlsRef} padding={props.padding}>
 			{renderNewNoteButtons()}
-			<BottomRow ref={searchAndSortRef} className="search-and-sort">
-				<SearchBar inputRef={searchBarRef} windowId={windowId}/>
-				{showsSortOrderButtons() &&
-					<SortOrderButtonsContainer>
-						<StyledPairButtonL
-							className="sort-order-field-button"
-							tooltip={sortOrderFieldTooltip()}
-							iconName={sortOrderFieldIcon()}
-							level={ButtonLevel.Secondary}
-							size={props.buttonSize}
-							onClick={onSortOrderFieldButtonClick}
-						/>
-						<StyledPairButtonR
-							className="sort-order-reverse-button"
-							tooltip={CommandService.instance().label('toggleNotesSortOrderReverse')}
-							iconName={sortOrderReverseIcon()}
-							level={ButtonLevel.Secondary}
-							size={props.buttonSize}
-							onClick={onSortOrderReverseButtonClick}
-						/>
-					</SortOrderButtonsContainer>
-				}
-			</BottomRow>
+			{showsSortOrderButtons() &&
+				<SortOrderButtonsContainer>
+					<StyledPairButtonL
+						className="sort-order-field-button"
+						tooltip={sortOrderFieldTooltip()}
+						iconName={sortOrderFieldIcon()}
+						level={ButtonLevel.Secondary}
+						size={props.buttonSize}
+						onClick={onSortOrderFieldButtonClick}
+					/>
+					<StyledPairButtonR
+						className="sort-order-reverse-button"
+						tooltip={CommandService.instance().label('toggleNotesSortOrderReverse')}
+						iconName={sortOrderReverseIcon()}
+						level={ButtonLevel.Secondary}
+						size={props.buttonSize}
+						onClick={onSortOrderReverseButtonClick}
+					/>
+				</SortOrderButtonsContainer>
+			}
+			<SearchBar inputRef={searchBarRef} windowId={windowId} searchBarHandleRef={searchBarHandleRef}/>
 		</StyledRoot>
 	);
 }

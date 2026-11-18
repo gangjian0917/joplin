@@ -50,23 +50,14 @@ const defaultLeftToRightItemRenderer: ListRenderer = {
 	],
 
 	itemCss: // css
-		`			
+		`
 		& {
 			box-sizing: border-box;
-			padding: 2px 6px;
+			padding: 1.5px 6px;
 		}
 
-		&:before {
-			content: '';
-			border-bottom: 1px solid var(--joplin-divider-color);
-			width: calc(100% - 28px);
-			position: absolute;
-			bottom: 0;
-			left: 14px;
-		}
-	
 		> .content.-selected {
-			background-color: var(--joplin-selected-color);
+			background-color: var(--joplin-note-list-selected-background-color, var(--joplin-selected-color));
 		}
 
 		&:hover > .content:not(.-selected) {
@@ -80,11 +71,12 @@ const defaultLeftToRightItemRenderer: ListRenderer = {
 			width: 100%;
 			height: 100%;
 			border-radius: 8px;
-			padding: 12px 10px;
+			padding: 12px 12px;
 			align-items: flex-start;
 			overflow-y: hidden;
 			flex-direction: column;
 			user-select: none;
+			transition: background-color 0.12s ease;
 	
 			> .checkbox {
 				display: flex;
@@ -92,6 +84,7 @@ const defaultLeftToRightItemRenderer: ListRenderer = {
 
 				> input {
 					margin: 0px 10px 1px 0px;
+					accent-color: var(--joplin-selected-color2);
 				}
 			}
 	
@@ -159,7 +152,7 @@ const defaultLeftToRightItemRenderer: ListRenderer = {
 		> .content.-shared.-selected > .title,
 		> .content.-selected > .title > .watchedicon,
 		> .content.-selected > .title > .lockedicon {
-			color: var(--joplin-selected-text-color, var(--joplin-color));
+			color: var(--joplin-note-list-selected-text-color, var(--joplin-selected-text-color, var(--joplin-color)));
 		}
 
 		> .content.-completed {

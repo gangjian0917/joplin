@@ -6,10 +6,17 @@ export const declaration: CommandDeclaration = {
 	label: () => _('Search in all the notes'),
 };
 
-export const runtime = (searchBarRef: { current: { select: ()=> void } | null }): CommandRuntime => {
+// onExpand is called when the search bar is collapsed — it expands it, which
+// mounts the input and focuses it (see SearchBar's useEffect). When already
+// expanded, select() the existing input.
+export const runtime = (searchBarRef: { current: { select: ()=> void } | null }, onExpand: ()=> void): CommandRuntime => {
 	return {
 		execute: async () => {
-			if (searchBarRef.current) searchBarRef.current.select();
+			if (searchBarRef.current) {
+				searchBarRef.current.select();
+			} else {
+				onExpand();
+			}
 		},
 	};
 };

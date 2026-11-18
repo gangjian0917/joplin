@@ -35,9 +35,18 @@ interface Props {
 	onUpdateLayout: (layout: LayoutItem)=> void;
 }
 
+const getLeftmostVisibleKey = (item: LayoutItem): string | null => {
+	if (!item || item.visible === false) return null;
+	if (!item.children) return item.key;
+	for (const child of item.children) {
+		const key = getLeftmostVisibleKey(child);
+		if (key) return key;
+	}
+	return null;
+};
+
 const MainLayoutPane: React.FC<Props> = (props) => {
 	const { contentKey, event } = props;
-
 
 	const windowId = useContext(WindowIdContext);
 	const cancelLayoutRemoveRef = useRef(0);
@@ -52,12 +61,13 @@ const MainLayoutPane: React.FC<Props> = (props) => {
 	}
 
 	const eventEmitter = event.eventEmitter;
+	const leftmostKey = getLeftmostVisibleKey(props.layout);
 
 	// const viewsToRemove:string[] = [];
 
 	const components: Record<string, ()=> React.ReactNode> = {
 		sideBar: () => {
-			return <Sidebar />;
+			return <Sidebar width={event.size.width}/>;
 		},
 
 		noteList: () => {
@@ -72,11 +82,12 @@ const MainLayoutPane: React.FC<Props> = (props) => {
 				notesSortOrderReverse={props.notesSortOrderReverse}
 				columns={props.notesColumns}
 				selectedFolderId={props.selectedFolderId}
+				isLeftmost={leftmostKey === 'noteList'}
 			/>;
 		},
 
 		editor: () => {
-			return <div className='note-editor-wrapper' role='main' aria-label={_('Note')}>
+			return <div className={`note-editor-wrapper${leftmostKey === 'editor' ? ' is-leftmost-pane' : ''}`} role='main' aria-label={_('Note')}>
 				<NoteEditor
 					windowId={windowId}
 					onTitleChange={props.onNoteTitleChange}
@@ -86,7 +97,9 @@ const MainLayoutPane: React.FC<Props> = (props) => {
 		},
 
 		chatPanel: () => {
-			return <ChatPanel windowId={windowId} />;
+			return <div className={leftmostKey === 'chatPanel' ? 'is-leftmost-pane' : undefined} style={{ width: '100%', height: '100%' }}>
+				<ChatPanel windowId={windowId} />
+			</div>;
 		},
 	};
 

@@ -30,19 +30,19 @@ interface RenderFoldersProps {
 	collapsedFolderIds: string[];
 }
 
-function folderIsCollapsed(context: RenderFoldersProps, folderId: string) {
+function folderIsCollapsed(context: RenderFoldersProps & { collapsedFolderIdSet: Set<string> }, folderId: string) {
 	if (!context.collapsedFolderIds || !context.collapsedFolderIds.length) return false;
 
 	while (true) {
 		const folder = context.folderTree.idToItem.get(folderId);
 		const folderParentId = getDisplayParentId(folder, context.folderTree.idToItem.get(folder.parent_id));
 		if (!folderParentId) return false;
-		if (context.collapsedFolderIds.includes(folderParentId)) return true;
+		if (context.collapsedFolderIdSet.has(folderParentId)) return true;
 		folderId = folderParentId;
 	}
 }
 
-function renderFoldersRecursive_<T>(props: RenderFoldersProps, renderItem: RenderFolderItem<T>, items: T[], parentId: string, depth: number, order: string[]): ItemsWithOrder<T> {
+function renderFoldersRecursive_<T>(props: RenderFoldersProps & { collapsedFolderIdSet: Set<string> }, renderItem: RenderFolderItem<T>, items: T[], parentId: string, depth: number, order: string[]): ItemsWithOrder<T> {
 	const folders = props.folderTree.parentIdToChildren.get(parentId ?? '') ?? [];
 	const parentIdToChildren = props.folderTree.parentIdToChildren;
 	for (const folder of folders) {
@@ -64,7 +64,11 @@ function renderFoldersRecursive_<T>(props: RenderFoldersProps, renderItem: Rende
 }
 
 export const renderFolders = <T> (props: RenderFoldersProps, renderItem: RenderFolderItem<T>): ItemsWithOrder<T> => {
-	return renderFoldersRecursive_(props, renderItem, [], '', 0, []);
+	// Build the Set once per render instead of doing Array.includes() on every
+	// ancestor walk — with thousands of folders the array lookup made tree
+	// rendering O(N * depth * K).
+	const collapsedFolderIdSet = new Set(props.collapsedFolderIds);
+	return renderFoldersRecursive_({ ...props, collapsedFolderIdSet }, renderItem, [], '', 0, []);
 };
 
 export const buildFolderTree = (folders: FolderEntity[]): FolderTree => {

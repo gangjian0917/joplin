@@ -1,6 +1,5 @@
-import { Theme } from '@joplin/lib/themes/type';
+import { ThemeStyle, buildStyle } from '@joplin/lib/theme';
 import { NoteBodyEditorProps } from '../../../utils/types';
-import { buildStyle } from '@joplin/lib/theme';
 import { useMemo } from 'react';
 
 
@@ -9,7 +8,7 @@ const useStyles = (props: NoteBodyEditorProps) => {
 	return useMemo(() => {
 		return buildStyle([
 			'CodeMirror', props.fontSize, props.contentMaxWidth,
-		], props.themeId, (theme: Theme) => {
+		], props.themeId, (theme: ThemeStyle) => {
 			return {
 				root: {
 					position: 'relative',
@@ -22,6 +21,11 @@ const useStyles = (props: NoteBodyEditorProps) => {
 					position: 'relative',
 					display: 'flex',
 					flexDirection: 'row',
+					alignItems: 'center',
+					marginLeft: -theme.editorPaddingLeft,
+					backgroundColor: theme.backgroundColor3,
+					borderTop: `1px solid ${theme.dividerColor}`,
+					borderBottom: `1px solid ${theme.dividerColor}`,
 				},
 				viewer: {
 					display: 'flex',

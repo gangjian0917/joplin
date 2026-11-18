@@ -1,6 +1,11 @@
 import * as React from 'react';
 import { DragEventHandler, KeyboardEventHandler, UIEventHandler } from 'react';
 
+// Extra rows rendered above and below the visible window. Without this
+// buffer, fast inertial scrolling outpaces rendering on the main thread
+// and blank rows flash on screen.
+const OVERSCAN_ROWS = 8;
+
 interface Props<ItemType> {
 	style: React.CSSProperties & { height: number };
 	itemHeight: number;
@@ -8,6 +13,7 @@ interface Props<ItemType> {
 
 	disabled?: boolean;
 	className?: string;
+	autoHideScrollbar?: boolean;
 
 	itemRenderer: (item: ItemType, index: number)=> React.JSX.Element;
 	renderContentWrapper?: (listItems: React.ReactNode[])=> React.ReactNode;
@@ -31,6 +37,8 @@ class ItemList<ItemType> extends React.Component<Props<ItemType>, State> {
 
 	private lastScrollTop_: number;
 	private listRef: React.MutableRefObject<HTMLDivElement>;
+	private scrollUpdateFrame_: number | null;
+	private autoHideTimer_: ReturnType<typeof setTimeout> | null;
 
 	public constructor(props: Props<ItemType>) {
 		super(props);
@@ -38,10 +46,23 @@ class ItemList<ItemType> extends React.Component<Props<ItemType>, State> {
 		this.lastScrollTop_ = 0;
 
 		this.listRef = React.createRef();
+		this.scrollUpdateFrame_ = null;
+		this.autoHideTimer_ = null;
 
 		this.onScroll = this.onScroll.bind(this);
 		this.onKeyDown = this.onKeyDown.bind(this);
 		this.onDrop = this.onDrop.bind(this);
+	}
+
+	public componentWillUnmount() {
+		if (this.scrollUpdateFrame_ !== null) {
+			cancelAnimationFrame(this.scrollUpdateFrame_);
+			this.scrollUpdateFrame_ = null;
+		}
+		if (this.autoHideTimer_ !== null) {
+			clearTimeout(this.autoHideTimer_);
+			this.autoHideTimer_ = null;
+		}
 	}
 
 	public visibleItemCount(props: Props<ItemType> = undefined) {
@@ -85,8 +106,23 @@ class ItemList<ItemType> extends React.Component<Props<ItemType>, State> {
 	}
 
 	public onScroll: UIEventHandler<HTMLDivElement> = event => {
-		this.lastScrollTop_ = (event.target as HTMLElement).scrollTop;
-		this.updateStateItemIndexes();
+		const target = event.target as HTMLElement;
+		this.lastScrollTop_ = target.scrollTop;
+		if (this.props.autoHideScrollbar) {
+			target.classList.add('-scrolling');
+			if (this.autoHideTimer_ !== null) clearTimeout(this.autoHideTimer_);
+			this.autoHideTimer_ = setTimeout(() => {
+				target.classList.remove('-scrolling');
+			}, 600);
+		}
+		// Coalesce scroll events to one state update per animation frame —
+		// trackpad scrolling fires events at up to 120Hz and a synchronous
+		// setState per event made the main thread re-render constantly.
+		if (this.scrollUpdateFrame_ !== null) return;
+		this.scrollUpdateFrame_ = requestAnimationFrame(() => {
+			this.scrollUpdateFrame_ = null;
+			this.updateStateItemIndexes();
+		});
 	};
 
 	public onKeyDown: KeyboardEventHandler<HTMLElement> = event => {
@@ -177,7 +213,10 @@ class ItemList<ItemType> extends React.Component<Props<ItemType>, State> {
 			}
 		}
 
-		renderableBlocks.push({ from: this.state.topItemIndex, to: this.state.bottomItemIndex });
+		renderableBlocks.push({
+			from: Math.max(0, this.state.topItemIndex - OVERSCAN_ROWS),
+			to: Math.min(items.length - 1, this.state.bottomItemIndex + OVERSCAN_ROWS),
+		});
 
 		// Ascending order
 		renderableBlocks.sort(({ from: fromA }, { from: fromB }) => fromA - fromB);
@@ -200,6 +239,7 @@ class ItemList<ItemType> extends React.Component<Props<ItemType>, State> {
 
 		const classes = ['item-list'];
 		if (this.props.className) classes.push(this.props.className);
+		if (this.props.autoHideScrollbar) classes.push('-auto-hide-scrollbar');
 
 		const wrapContent = this.props.renderContentWrapper ?? ((children) => <>{children}</>);
 		return (

@@ -264,14 +264,24 @@ export default class Folder extends BaseItem {
 
 		const where = [
 			'is_conflict = 0',
-			'notes.deleted_time = 0',
+			'deleted_time = 0',
 		];
-		if (!includeCompletedTodos) where.push('(notes.is_todo = 0 OR notes.todo_completed = 0)');
+		if (!includeCompletedTodos) where.push('(is_todo = 0 OR todo_completed = 0)');
 
+		// Group on the notes side, joined to folders via the covering index on
+		// parent_id (added in database migration 55). Filtering notes before the
+		// join lets SQLite drive the query from the index instead of scanning
+		// the wide notes table. Only direct note counts are needed here — the
+		// ancestor aggregation happens in the loop below.
 		const sql = `
-			SELECT folders.id as folder_id, count(notes.parent_id) as note_count 
-			FROM folders LEFT JOIN notes ON notes.parent_id = folders.id
-			WHERE ${where.join(' AND ')}
+			SELECT folders.id as folder_id, COALESCE(sum(notes_count.note_count), 0) as note_count
+			FROM folders
+			LEFT JOIN (
+				SELECT parent_id, count(*) as note_count
+				FROM notes
+				WHERE ${where.join(' AND ')}
+				GROUP BY parent_id
+			) notes_count ON notes_count.parent_id = folders.id
 			GROUP BY folders.id
 		`;
 

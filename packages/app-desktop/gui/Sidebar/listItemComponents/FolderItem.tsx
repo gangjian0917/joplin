@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { memo } from 'react';
 
 import { FolderIcon, FolderIconType } from '@joplin/lib/services/database/types';
 import ExpandLink from './ExpandLink';
@@ -22,10 +23,10 @@ const renderFolderIcon = (folderIcon: FolderIcon) => {
 			name: 'far fa-folder',
 			type: FolderIconType.FontAwesome,
 		};
-		return <div style={{ marginRight: 7, display: 'flex' }}><FolderIconBox opacity={0.7} folderIcon={defaultFolderIcon}/></div>;
+		return <div className="folder-icon-wrapper"><FolderIconBox opacity={0.7} folderIcon={defaultFolderIcon}/></div>;
 	}
 
-	return <div style={{ marginRight: 7, display: 'flex' }}><FolderIconBox folderIcon={folderIcon}/></div>;
+	return <div className="folder-icon-wrapper"><FolderIconBox folderIcon={folderIcon}/></div>;
 };
 
 interface FolderItemProps {
@@ -51,10 +52,11 @@ interface FolderItemProps {
 
 	index: number;
 	itemCount: number;
+	isCompact?: boolean;
 }
 
 function FolderItem(props: FolderItemProps) {
-	const { hasChildren, showFolderIcon, isExpanded, parentId, depth, selectionState, folderId, folderTitle, folderIcon, noteCount, onFolderDragStart_, onFolderDragOver_, onFolderDrop_, itemContextMenu, folderItem_click, onFolderToggleClick_, shareId, isPublished } = props;
+	const { hasChildren, showFolderIcon, isExpanded, parentId, depth, selectionState, folderId, folderTitle, folderIcon, noteCount, onFolderDragStart_, onFolderDragOver_, onFolderDrop_, itemContextMenu, folderItem_click, onFolderToggleClick_, shareId, isPublished, isCompact } = props;
 
 	const shareTitle = _('Shared');
 	const shareIcon = shareId && !parentId ? <StyledShareIcon aria-label={shareTitle} title={shareTitle} className="fas fa-share-alt"/> : null;
@@ -65,6 +67,15 @@ function FolderItem(props: FolderItemProps) {
 	const doRenderFolderIcon = () => {
 		if (folderId === getTrashFolderId()) {
 			return renderFolderIcon(getTrashFolderIcon(FolderIconType.FontAwesome));
+		}
+
+		if (folderId === Folder.conflictFolderId() && isCompact && !folderIcon) {
+			return renderFolderIcon({
+				dataUrl: '',
+				emoji: '',
+				name: 'fas fa-exclamation-triangle',
+				type: FolderIconType.FontAwesome,
+			});
 		}
 
 		if (!showFolderIcon) return null;
@@ -98,6 +109,7 @@ function FolderItem(props: FolderItemProps) {
 			<StyledListItemAnchor
 				className="list-item"
 				id={titleId}
+				title={isCompact ? folderTitle : undefined}
 				isConflictFolder={folderId === Folder.conflictFolderId()}
 				selected={selectionState.selected}
 				shareId={shareId}
@@ -127,4 +139,4 @@ function FolderItem(props: FolderItemProps) {
 	);
 }
 
-export default FolderItem;
+export default memo(FolderItem);

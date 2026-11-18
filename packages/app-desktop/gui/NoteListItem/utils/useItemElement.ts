@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { ItemFlow } from '@joplin/lib/services/plugins/api/noteListType';
 import { ItemEventHandlers } from './types';
 import attachNoteTitleTooltip from './noteTitleTooltip';
+import { getCachedNoteHtml, setCachedNoteHtml } from './noteHtmlCache';
 
 const addItemEventListeners = (
 	element: HTMLElement,
@@ -52,9 +53,23 @@ const addItemEventListeners = (
 };
 
 const useItemElement = (
-	rootElement: HTMLDivElement | null, noteId: string, noteHtml: string, focusVisible: boolean, style: React.CSSProperties, itemSize: Size, onClick: React.MouseEventHandler<HTMLDivElement>, onDoubleClick: React.MouseEventHandler<HTMLDivElement>, flow: ItemFlow, itemEventHandlers: ItemEventHandlers, displayTitle = '',
+	rootElement: HTMLDivElement | null, noteId: string, noteHtml: string, placeholderHtml: string, focusVisible: boolean, style: React.CSSProperties, itemSize: Size, onClick: React.MouseEventHandler<HTMLDivElement>, onDoubleClick: React.MouseEventHandler<HTMLDivElement>, flow: ItemFlow, itemEventHandlers: ItemEventHandlers, displayTitle = '',
 ) => {
 	const itemElement = useRef<HTMLDivElement>(null);
+
+	// Effects are split so that re-creating the element (and re-writing
+	// innerHTML) only happens when the rendered note HTML actually changes.
+	// Scroll re-renders used to rebuild every visible DOM node on each pass.
+
+	// Latest event handlers kept in a ref: the DOM is not rebuilt whenever a
+	// handler identity changes.
+	const handlersRef = useRef({ onClick, onDoubleClick, itemEventHandlers });
+	handlersRef.current = { onClick, onDoubleClick, itemEventHandlers };
+
+	// Read once at mount; the DOM is not rebuilt when these change (a separate
+	// effect updates innerHTML).
+	const mountContentRef = useRef({ noteHtml, placeholderHtml });
+	mountContentRef.current = { noteHtml, placeholderHtml };
 
 	useEffect(() => {
 		if (!rootElement) return () => {};
@@ -62,26 +77,57 @@ const useItemElement = (
 		const element = document.createElement('div');
 		element.setAttribute('data-id', noteId);
 		element.className = 'note-list-item';
-		for (const [n, v] of Object.entries(style)) {
-			(element.style as unknown as Record<string, unknown>)[n] = v;
-		}
-		if (flow === ItemFlow.LeftToRight) element.style.width = `${itemSize.width}px`;
-		element.style.height = `${itemSize.height}px`;
-		element.innerHTML = noteHtml;
 
-		const { cleanup } = addItemEventListeners(element, itemEventHandlers, onClick, onDoubleClick);
-		const detachTooltip = displayTitle ? attachNoteTitleTooltip(element, displayTitle) : null;
+		// Fill synchronously on mount: previously-rendered HTML from the cache,
+		// or a lightweight placeholder. Without this the item stayed empty until
+		// the async render pipeline completed, which made fast scrolling flash
+		// blank rows.
+		element.innerHTML = mountContentRef.current.noteHtml ?? getCachedNoteHtml(noteId) ?? mountContentRef.current.placeholderHtml;
 
 		rootElement.appendChild(element);
 		itemElement.current = element;
 
 		return () => {
-			cleanup();
-			if (detachTooltip) detachTooltip();
 			itemElement.current = null;
 			element.remove();
 		};
-	}, [rootElement, itemSize, noteHtml, noteId, flow, style, onClick, onDoubleClick, itemEventHandlers, displayTitle]);
+	}, [rootElement, noteId]);
+
+	// Style is applied separately so that changing it (e.g. the item height
+	// when the list renderer changes) does not re-create the DOM node.
+	useEffect(() => {
+		const element = itemElement.current;
+		if (!element) return;
+		for (const [n, v] of Object.entries(style)) {
+			(element.style as unknown as Record<string, unknown>)[n] = v;
+		}
+		if (flow === ItemFlow.LeftToRight) element.style.width = `${itemSize.width}px`;
+		element.style.height = `${itemSize.height}px`;
+	}, [style, itemSize, flow]);
+
+	useEffect(() => {
+		if (!noteHtml) return;
+		const element = itemElement.current;
+		if (!element) return;
+		setCachedNoteHtml(noteId, noteHtml);
+		if (element.innerHTML !== noteHtml) element.innerHTML = noteHtml;
+	}, [noteHtml, noteId]);
+
+	useEffect(() => {
+		const element = itemElement.current;
+		if (!element) return undefined;
+		const { cleanup } = addItemEventListeners(element, handlersRef.current.itemEventHandlers, handlersRef.current.onClick, handlersRef.current.onDoubleClick);
+		return cleanup;
+	}, [rootElement, noteId, noteHtml, flow]);
+
+	useEffect(() => {
+		const element = itemElement.current;
+		if (!element) return undefined;
+		const detachTooltip = displayTitle ? attachNoteTitleTooltip(element, displayTitle) : null;
+		return () => {
+			if (detachTooltip) detachTooltip();
+		};
+	}, [displayTitle, rootElement, noteId, noteHtml, flow]);
 
 	useEffect(() => {
 		const element = itemElement.current;

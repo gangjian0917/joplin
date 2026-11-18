@@ -19,6 +19,7 @@ interface Props {
 	onDrop: React.DragEventHandler|null;
 	index: number;
 	itemCount: number;
+	isCompact?: boolean;
 }
 
 const HeaderItem: React.FC<Props> = props => {
@@ -59,10 +60,12 @@ const HeaderItem: React.FC<Props> = props => {
 			onDrop={props.onDrop}
 		>
 			<StyledHeader
+				className='sidebar-header'
+				title={props.isCompact ? item.label : undefined}
 				onClick={onClick}
 			>
-				<StyledHeaderIcon aria-hidden='true' role='img' className={item.iconName}/>
-				<StyledHeaderLabel>{item.label}</StyledHeaderLabel>
+				<StyledHeaderIcon aria-hidden='true' role='img' className={`${item.iconName} sidebar-header-icon`}/>
+				<StyledHeaderLabel className='sidebar-header-label'>{item.label}</StyledHeaderLabel>
 			</StyledHeader>
 		</ListItemWrapper>
 	);

@@ -20,6 +20,7 @@ import BaseItem from '@joplin/lib/models/BaseItem';
 import setupToolbarButtons from './utils/setupToolbarButtons';
 import { plainTextToHtml } from '@joplin/lib/htmlUtils';
 import { themeStyle } from '@joplin/lib/theme';
+import { ThemeAppearance } from '@joplin/lib/themes/type';
 import { loadScript } from '../../../utils/loadScript';
 import bridge from '../../../../services/bridge';
 import { TinyMceEditorEvents } from './utils/types';
@@ -417,16 +418,28 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 		if (!editorContainerDom) return () => {};
 		const theme = themeStyle(props.themeId);
 		const backgroundColor = props.whiteBackgroundNoteRendering ? lightTheme.backgroundColor : theme.backgroundColor;
+		const isDark = theme.appearance === ThemeAppearance.Dark;
+		const accentColor = isDark ? '#0a84ff' : '#007aff';
+		const activePillBg = isDark ? 'rgba(10, 132, 255, 0.22)' : 'rgba(0, 122, 255, 0.13)';
 
 		const element = editorContainerDom.createElement('style');
 		element.setAttribute('id', 'tinyMceStyle');
 		editorContainerDom.head.appendChild(element);
 		element.appendChild(editorContainerDom.createTextNode(`
+			.joplin-tinymce .tox-tinymce {
+				background-color: ${theme.backgroundColor3} !important;
+			}
+
 			.joplin-tinymce .tox-editor-header.tox-editor-header {
-				margin-left: ${styles.leftExtraToolbarContainer.width + styles.leftExtraToolbarContainer.padding * 2}px;
-				margin-right: ${styles.rightExtraToolbarContainer.width + styles.rightExtraToolbarContainer.padding * 2}px;
+				margin-left: ${styles.leftExtraToolbarContainer.width + styles.leftExtraToolbarContainer.paddingLeft + styles.leftExtraToolbarContainer.paddingRight}px;
+				margin-right: ${styles.rightExtraToolbarContainer.width + styles.rightExtraToolbarContainer.paddingLeft + styles.rightExtraToolbarContainer.paddingRight}px;
 				padding: 0;
 				box-shadow: none;
+				border-top: 1px solid ${theme.dividerColor} !important;
+			}
+
+			.joplin-tinymce .tox-edit-area {
+				border-top: 1px solid ${theme.dividerColor} !important;
 			}
 			
 			.tox .tox-toolbar,
@@ -465,8 +478,18 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 				fill: ${theme.color};
 			}
 
+			.tox .tox-collection__item {
+				border-radius: 5px !important;
+				transition: background-color 0.1s ease, color 0.1s ease;
+			}
+
 			.tox .tox-collection--list .tox-collection__item--active {
-				color: ${theme.backgroundColor};
+				background-color: ${accentColor} !important;
+				color: #ffffff !important;
+			}
+
+			.tox .tox-collection--list .tox-collection__item--active svg {
+				fill: #ffffff !important;
 			}
 
 			.tox .tox-collection__item--state-disabled {
@@ -476,7 +499,10 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 			.tox .tox-menu {
 				/* Ensures that popover menus (the color swatch menu) has a visible border
 				   even in dark mode. */
-				border: 1px solid rgba(140, 140, 140, 0.3);
+				border: 1px solid ${theme.dividerColor} !important;
+				border-radius: 8px !important;
+				box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18) !important;
+				padding: 4px !important;
 			}
 
 			/*
@@ -491,7 +517,7 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 
 			.tox .tox-dialog-wrap__backdrop {
 				background-color: ${theme.backgroundColor} !important;
-				opacity:0.7
+				opacity: 0.7;
 			}
 			
 			.tox .tox-editor-header {
@@ -523,11 +549,25 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 				opacity: 0.7;
 			}
 
-			.tox .tox-tbtn--enabled,
-			.tox .tox-tbtn--enabled:hover,
-			.tox .tox-menu button:hover,
 			.tox .tox-split-button {
-				background-color: ${theme.selectedColor};
+				background-color: transparent !important;
+				border-radius: 5px !important;
+				transition: background-color 0.12s ease;
+			}
+
+			.tox .tox-tbtn--enabled,
+			.tox .tox-tbtn--enabled:hover {
+				background-color: ${activePillBg} !important;
+				color: ${accentColor} !important;
+			}
+
+			.tox .tox-tbtn--enabled svg,
+			.tox .tox-tbtn--enabled:hover svg {
+				fill: ${accentColor} !important;
+			}
+
+			.tox .tox-menu button:hover {
+				background-color: ${theme.backgroundColorHover3};
 			}
 
 			.tox .tox-button--naked:hover:not(:disabled) {
@@ -536,38 +576,38 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 			
 			.tox .tox-tbtn:focus,
 			.tox .tox-split-button:focus {
-				background-color: ${theme.backgroundColor3}
+				background-color: transparent;
 			}
 
 			.tox .tox-tbtn:focus-visible,
 			.tox .tox-split-button:focus-visible {
-				background-color: ${theme.backgroundColorHover3}
+				background-color: ${theme.backgroundColorHover3};
 			}
 			
 			.tox .tox-tbtn:hover,
+			.tox .tox-split-button:hover,
 			.tox .tox-menu button:hover > svg {
 				color: ${theme.colorHover3} !important;
 				fill: ${theme.colorHover3} !important;
-				background-color: ${theme.backgroundColorHover3}
-			}			
-			
+				background-color: ${theme.backgroundColorHover3} !important;
+			}
 
 			.tox .tox-tbtn {
 				height: ${theme.toolbarHeight}px;
 				min-height: ${theme.toolbarHeight}px;
-				margin: 0;
+				border-radius: 5px !important;
+				transition: background-color 0.12s ease, color 0.12s ease;
 			}
 
-
 			.tox .tox-tbtn[aria-haspopup=true] {
-				width: ${theme.toolbarHeight + 15}px;
-				min-width: ${theme.toolbarHeight + 15}px;
+				width: ${theme.toolbarHeight + 13}px;
+				min-width: ${theme.toolbarHeight + 13}px;
 			}
 
 			.tox .tox-tbtn > span,
 			.tox .tox-tbtn:active > span,
 			.tox .tox-tbtn:hover > span {
-				transform: scale(0.8);
+				transform: scale(0.84);
 			}
 
 			.tox .tox-toolbar__primary,
@@ -580,10 +620,22 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 				box-shadow: none;
 			}
 			
-			/* Decrease the spacing between groups */
+			/* Subtle dividers and spacing between toolbar groups */
 			.tox .tox-toolbar__group {
-				padding-left: 7px;
-				padding-right: 7px;
+				position: relative;
+				padding-left: 5px;
+				padding-right: 5px;
+			}
+
+			.tox .tox-toolbar__group:not(:last-of-type)::after {
+				content: '';
+				position: absolute;
+				right: 0;
+				top: 50%;
+				transform: translateY(-50%);
+				width: 1px;
+				height: 15px;
+				background-color: ${theme.dividerColor};
 			}
 
 			.tox-tinymce,
@@ -1047,6 +1099,29 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 				if (element) docHead().removeChild(element);
 			}
 		}
+
+		// Align the editable body horizontally with the note title above the
+		// full-bleed toolbar, and give the iframe a slim macOS scrollbar.
+		const bodyStyleId = 'joplin-tinymce-body-override';
+		let bodyStyleElement = editor.getDoc().getElementById(bodyStyleId) as HTMLStyleElement | null;
+		if (!bodyStyleElement) {
+			bodyStyleElement = editor.dom.create('style', { id: bodyStyleId }) as HTMLStyleElement;
+			docHead().appendChild(bodyStyleElement);
+		}
+		bodyStyleElement.textContent = `
+			.mce-content-body {
+				padding: 14px 24px 10em ${theme.editorPaddingLeft}px;
+			}
+			::-webkit-scrollbar {
+				width: 7px;
+				height: 7px;
+			}
+			::-webkit-scrollbar-thumb {
+				border-radius: 999px;
+				border: 2px solid transparent;
+				background-clip: padding-box;
+			}
+		`;
 	};
 
 	function resourceInfosEqual(ri1: ResourceInfos, ri2: ResourceInfos): boolean {

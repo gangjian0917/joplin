@@ -97,7 +97,7 @@ const globalStyle = (() => {
 			paddingTop: mac ? 2 : 6,
 			paddingBottom: mac ? 2 : 6,
 			// boxShadow: '0px 1px 1px rgba(0,0,0,0.3)',
-			borderRadius: mac ? 6 : 4,
+			borderRadius: mac ? 7 : 4,
 		},
 	};
 })();
@@ -181,20 +181,21 @@ export function extraStyles(theme: ThemeAndDerivedColors) {
 	};
 
 	const tagStyle = {
-		fontSize: baseFontSize,
+		fontSize: mac ? 12 : baseFontSize,
 		fontFamily: globalStyle.fontFamily,
-		paddingTop: 4,
-		paddingBottom: 4,
-		paddingRight: 10,
-		paddingLeft: 10,
+		paddingTop: mac ? 2 : 4,
+		paddingBottom: mac ? 2 : 4,
+		paddingRight: mac ? 9 : 10,
+		paddingLeft: mac ? 9 : 10,
 		backgroundColor: theme.backgroundColor3,
 		color: theme.color3,
 		display: literal('flex'),
 		alignItems: literal('center'),
 		justifyContent: literal('center'),
-		marginRight: 8,
+		marginRight: mac ? 6 : 8,
 		borderRadius: 100,
-		borderWidth: 0,
+		borderWidth: mac ? 1 : 0,
+		...(mac ? { borderStyle: 'solid', borderColor: theme.dividerColor } : {}),
 	};
 
 	const toolbarStyle = {
@@ -328,7 +329,7 @@ export function extraStyles(theme: ThemeAndDerivedColors) {
 			maxHeight: '80%',
 			display: literal('flex'),
 			flexDirection: literal('column'),
-			...(mac ? { borderRadius: 12 } : {}),
+			...(mac ? { borderRadius: 12, border: `1px solid ${theme.dividerColor}` } : {}),
 		},
 		buttonIconStyle: {
 			color: theme.iconColor,
@@ -384,12 +385,12 @@ export function themeStyle(themeId: number): ThemeStyle {
 		const usesSystemChrome = themeId === Setting.THEME_LIGHT || themeId === Setting.THEME_DARK;
 		output.focusOutlineColor = accent;
 		output.focusOutlineColorDimmed = dark ? 'rgba(10,132,255,0.45)' : 'rgba(0,122,255,0.35)';
-		output.scrollbarThumbColor = dark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.32)';
-		output.scrollbarThumbColorHover = dark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.48)';
+		output.scrollbarThumbColor = dark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.24)';
+		output.scrollbarThumbColorHover = dark ? 'rgba(255,255,255,0.48)' : 'rgba(0,0,0,0.42)';
 		output.scrollbarThumbColor2 = output.scrollbarThumbColor;
 		output.scrollbarThumbColorHover2 = output.scrollbarThumbColorHover;
 		if (usesSystemChrome) {
-			output.backgroundColorHover2 = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
+			output.backgroundColorHover2 = dark ? 'rgba(255,255,255,0.07)' : '#f2f2f2';
 			output.selectedTextColor = '#ffffff';
 		}
 	}

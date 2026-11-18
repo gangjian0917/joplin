@@ -153,6 +153,19 @@ export default function(theme: RendererTheme, options: Options = null) {
 			background: ${theme.scrollbarThumbColorHover}; 
 		}
 
+		/* Auto-hide the note viewer's scrollbar: transparent thumb at rest,
+		   fading in while scrolling. The -scrolling class is added by the
+		   scroll listener in note-viewer/index.html. */
+		#joplin-container-content::-webkit-scrollbar-thumb,
+		#joplin-container-content::-webkit-scrollbar-thumb:hover {
+			background: transparent;
+			transition: background 0.4s ease;
+		}
+		#joplin-container-content.-scrolling::-webkit-scrollbar-thumb,
+		#joplin-container-content.-scrolling::-webkit-scrollbar-thumb:hover {
+			background: ${theme.scrollbarThumbColorHover};
+		}
+
 		${maxWidthCss}
 
 		/* Remove top padding and margin from first child so that top of rendered text is aligned to top of text editor text */
@@ -187,39 +200,49 @@ export default function(theme: RendererTheme, options: Options = null) {
 		}
 
 		h1, h2, h3, h4, h5, h6 {
-			line-height: 1.5em;
+			line-height: 1.4em;
 		}
 		h1 {
-			font-size: 1.5em;
-			font-weight: bold;
+			font-size: 1.45em;
+			font-weight: 700;
+			letter-spacing: -0.02em;
 			border-bottom: 1px solid ${theme.dividerColor};
 			padding-bottom: .3em;
+			margin-top: 1.1em;
 		}
 		h2 {
-			font-size: 1.3em;
-			font-weight: bold;
-			padding-bottom: .1em; */
+			font-size: 1.24em;
+			font-weight: 600;
+			letter-spacing: -0.015em;
+			margin-top: 1em;
 		}
 		h3 {
-			font-size: 1.1em;
-			font-weight: bold;
+			font-size: 1.08em;
+			font-weight: 600;
+			letter-spacing: -0.01em;
+			margin-top: .9em;
 		}
 		h4, h5, h6 {
 			font-size: 1em;
-			font-weight: bold;
+			font-weight: 600;
 		}
 
 		.exported-note-title {
 			font-size: 2em;
-			font-weight: bold;
+			font-weight: 700;
+			letter-spacing: -0.022em;
 			margin-bottom: 0.8em;
-			line-height: 1.5em;
+			line-height: 1.4em;
 			padding-bottom: .35em;
 			border-bottom: 1px solid ${theme.dividerColor};
 		}
 
 		a {
 			color: ${theme.urlColor};
+			text-decoration: none;
+		}
+		a:hover {
+			text-decoration: underline;
 		}
 		ul, ol {
 			padding-left: 0;
@@ -312,8 +335,8 @@ export default function(theme: RendererTheme, options: Options = null) {
       -webkit-mask-repeat: no-repeat;
 		}
 		blockquote {
-			border-left: 4px solid ${theme.codeBorderColor};
-			padding-left: 1.2em;
+			border-left: 3px solid ${theme.dividerColor};
+			padding: 0.2em 0 0.2em 1.1em;
 			margin-left: 0;
 			opacity: ${theme.blockQuoteOpacity};
 		}
@@ -329,8 +352,8 @@ export default function(theme: RendererTheme, options: Options = null) {
 		.jop-tinymce table td, .jop-tinymce table th,
 		table td, th {
 			text-align: left;
-			padding: .5em 1em .5em 1em;
-			font-size: ${theme.noteViewerFontSize};
+			padding: .5em .9em;
+			font-size: 0.94em;
 			color: ${theme.color};
 			font-family: ${fontFamily};
 		}
@@ -343,8 +366,10 @@ export default function(theme: RendererTheme, options: Options = null) {
 		.jop-tinymce table th,
 		table th {
 			border: 1px solid ${theme.codeBorderColor};
-			border-bottom: 2px solid ${theme.codeBorderColor};
+			border-bottom: 1.5px solid ${theme.dividerColor};
 			background-color: ${theme.tableBackgroundColor};
+			font-weight: 600;
+			font-size: 0.92em;
 		}
 
 		.jop-tinymce table tr:nth-child(even),
@@ -354,25 +379,26 @@ export default function(theme: RendererTheme, options: Options = null) {
 
 		.jop-tinymce table tr:hover,
 		table tr:hover {
-			background-color: ${theme.raisedBackgroundColor};
+			background-color: ${theme.codeBackgroundColor};
 		}
 
 		hr {
 			border: none;
-			border-bottom: 2px solid ${theme.dividerColor};
+			border-bottom: 1px solid ${theme.dividerColor};
+			margin: 1.4em 0;
 		}
 		img {
 			max-width: 100%;
 			height: auto;
+			border-radius: 4px;
 		}
 		
 		.inline-code,
 		.mce-content-body code {
 			border: 1px solid ${theme.codeBorderColor};
 			background-color: ${theme.codeBackgroundColor};
-			padding-right: .2em;
-			padding-left: .2em;
-			border-radius: .25em;
+			padding: .12em .38em;
+			border-radius: 4px;
 			color: ${theme.codeColor};
 			font-size: ${theme.codeFontSize};
 		}
@@ -465,6 +491,9 @@ export default function(theme: RendererTheme, options: Options = null) {
 		/* https://github.com/laurent22/joplin/issues/5740 */
 		pre.hljs {
 			overflow-x: auto;
+			border-radius: 8px;
+			padding: 12px 14px;
+			border: 1px solid ${theme.codeBorderColor};
 		}
 
 		.joplin-table-wrapper{

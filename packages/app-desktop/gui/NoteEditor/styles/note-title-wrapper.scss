@@ -3,10 +3,28 @@
 	display: flex;
 	flex-direction: row;
 	align-items: center;
-	padding-left: var(--joplin-editor-padding-left);
+	min-height: 44px;
+	box-sizing: border-box;
+	padding: 6px 12px 6px var(--joplin-editor-padding-left);
+	gap: 10px;
 
 	@media (max-width: 800px) {
 		flex-direction: column;
 		align-items: flex-start;
 	}
+}
+
+html.mac-hidden-titlebar .note-title-wrapper {
+	-webkit-app-region: drag;
+
+	input,
+	button,
+	a,
+	[role="button"] {
+		-webkit-app-region: no-drag;
+	}
+}
+
+html.mac-hidden-titlebar:not(.is-fullscreen) .note-editor-wrapper.is-leftmost-pane .note-title-wrapper {
+	padding-left: 78px;
 }

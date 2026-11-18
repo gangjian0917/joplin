@@ -112,6 +112,7 @@
 
 		let ignoreNextScrollTime_ = Date.now();
 		let ignoreNextScrollEventCount_ = 0;
+		let autoHideScrollbarTimer_ = null;
 
 		// ignoreNextScrollEvent() provides a way to skip scroll events for a certain duration.
 		// In general, it should be called whenever the scroll value is set explicitly (programmatically)
@@ -721,6 +722,15 @@
 
 		contentElement.addEventListener('scroll', webviewLib.logEnabledEventHandler(e => {
 			lastScrollTop_ = contentElement.scrollTop;
+
+			// Auto-hide scrollbar: fade the thumb in while scrolling, then out
+			// after a short delay. See the -auto-hide-scrollbar CSS in noteStyle.ts.
+			contentElement.classList.add('-scrolling');
+			if (autoHideScrollbarTimer_) clearTimeout(autoHideScrollbarTimer_);
+			autoHideScrollbarTimer_ = setTimeout(() => {
+				contentElement.classList.remove('-scrolling');
+			}, 600);
+
 			// If the last scroll event was done by the application, ignoreNextScrollEvent() is called and
 			// we can use that to skip the event handling. We skip it because in that case
 			// the scroll position has already been updated. Also we add a 200ms interval

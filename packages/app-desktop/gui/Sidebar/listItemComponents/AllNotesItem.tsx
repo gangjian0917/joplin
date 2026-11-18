@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { StyledAllNotesIcon, StyledListItemAnchor } from '../styles';
+import { StyledAllNotesIcon, StyledListItemAnchor, StyledSpanFix } from '../styles';
 import { useCallback } from 'react';
 import { Dispatch } from 'redux';
 import bridge from '../../../services/bridge';
@@ -23,6 +23,7 @@ interface Props {
 	item: ListItem;
 	index: number;
 	itemCount: number;
+	isCompact?: boolean;
 }
 
 const menuUtils = new MenuUtils(CommandService.instance());
@@ -61,15 +62,16 @@ const AllNotesItem: React.FC<Props> = props => {
 			itemCount={props.itemCount}
 		>
 			<EmptyExpandLink/>
-			<StyledAllNotesIcon aria-hidden='true' role='img' className='icon-notes'/>
 			<StyledListItemAnchor
 				className="list-item"
-				isSpecialItem={true}
+				isSpecialItem={false}
 				selected={props.selectionState.selected}
+				title={props.isCompact ? props.item.label : undefined}
 				onClick={onAllNotesClick_}
 				onContextMenu={toggleAllNotesContextMenu}
 			>
-				{props.item.label}
+				<StyledAllNotesIcon aria-hidden='true' role='img' className='icon-notes' selected={props.selectionState.selected}/>
+				<StyledSpanFix className='title'>{props.item.label}</StyledSpanFix>
 			</StyledListItemAnchor>
 		</ListItemWrapper>
 	);

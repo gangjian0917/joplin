@@ -6,6 +6,7 @@ import * as React from 'react';
 const defaultProps = {
 	noteId: 'note-1',
 	noteHtml: '<span>Test content</span>',
+	placeholderHtml: '<span>Placeholder</span>',
 	focusVisible: false,
 	style: { height: '24px' } as React.CSSProperties,
 	itemSize: { width: 200, height: 24 },
@@ -32,7 +33,7 @@ describe('useItemElement', () => {
 
 	test('returns a ref (no setState, avoids "Maximum update depth exceeded")', () => {
 		const { result } = renderHook(
-			() => useItemElement(rootElement, defaultProps.noteId, defaultProps.noteHtml, defaultProps.focusVisible, defaultProps.style, defaultProps.itemSize, defaultProps.onClick, defaultProps.onDoubleClick, defaultProps.flow, defaultItemEventHandlers),
+			() => useItemElement(rootElement, defaultProps.noteId, defaultProps.noteHtml, defaultProps.placeholderHtml, defaultProps.focusVisible, defaultProps.style, defaultProps.itemSize, defaultProps.onClick, defaultProps.onDoubleClick, defaultProps.flow, defaultItemEventHandlers),
 		);
 
 		expect(result.current).toHaveProperty('current');
@@ -40,7 +41,7 @@ describe('useItemElement', () => {
 
 	test('assigns created element to ref.current and cleanup nulls ref and removes element', () => {
 		const { result, unmount } = renderHook(
-			() => useItemElement(rootElement, defaultProps.noteId, defaultProps.noteHtml, false, defaultProps.style, defaultProps.itemSize, defaultProps.onClick, defaultProps.onDoubleClick, defaultProps.flow, defaultItemEventHandlers),
+			() => useItemElement(rootElement, defaultProps.noteId, defaultProps.noteHtml, defaultProps.placeholderHtml, false, defaultProps.style, defaultProps.itemSize, defaultProps.onClick, defaultProps.onDoubleClick, defaultProps.flow, defaultItemEventHandlers),
 		);
 
 		act(() => {});
@@ -57,7 +58,7 @@ describe('useItemElement', () => {
 
 	test('does nothing when rootElement is null', () => {
 		const { result } = renderHook(
-			() => useItemElement(null, defaultProps.noteId, defaultProps.noteHtml, false, defaultProps.style, defaultProps.itemSize, defaultProps.onClick, defaultProps.onDoubleClick, defaultProps.flow, defaultItemEventHandlers),
+			() => useItemElement(null, defaultProps.noteId, defaultProps.noteHtml, defaultProps.placeholderHtml, false, defaultProps.style, defaultProps.itemSize, defaultProps.onClick, defaultProps.onDoubleClick, defaultProps.flow, defaultItemEventHandlers),
 		);
 
 		act(() => {});

@@ -1,12 +1,12 @@
 .tag-bar {
-	padding-left: var(--joplin-editor-padding-left);
+	padding-left: calc(var(--joplin-editor-padding-left) - 4px);
 	display: flex;
 	flex-direction: row;
 	align-items: center;
-	height: 40px;
+	height: 36px;
 
 	> .content {
-		padding-left: 8px;
+		padding-left: 6px;
 		display: flex;
 		flex-direction: row;
 		align-items: center;

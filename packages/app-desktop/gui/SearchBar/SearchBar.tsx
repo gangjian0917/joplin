@@ -9,15 +9,46 @@ import uuid from '@joplin/lib/uuid';
 import { connect } from 'react-redux';
 import Note from '@joplin/lib/models/Note';
 import { AppState } from '../../app.reducer';
+import { _ } from '@joplin/lib/locale';
 import { blur, focus } from '@joplin/lib/utils/focusHandler';
 const debounce = require('debounce');
 import styled from 'styled-components';
 
-export const Root = styled.div`
+export const Root = styled.div<{ searchExpanded?: boolean }>`
 	position: relative;
 	display: flex;
-	width: 100%;
-	min-width: 30px;
+	align-items: center;
+	width: ${(props) => props.searchExpanded ? '100%' : 'auto'};
+	flex: ${(props) => props.searchExpanded ? '1 1 auto' : '0 0 auto'};
+	margin-left: auto;
+	min-width: 28px;
+
+	> .search-expand-button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		padding: 0;
+		background: none;
+		border: none;
+		border-radius: 6px;
+		transition: background-color 0.12s ease;
+
+		&:hover {
+			background-color: var(--joplin-background-color-hover3);
+		}
+
+		&:active {
+			background-color: var(--joplin-background-color-active3);
+			transform: scale(0.96);
+		}
+
+		> .icon {
+			font-size: 14px;
+			color: var(--joplin-color3);
+		}
+	}
 `;
 
 interface Props {
@@ -27,12 +58,21 @@ interface Props {
 	selectedNoteId: string;
 	isFocused?: boolean;
 	globalQuery?: string;
+	searchBarHandleRef?: React.MutableRefObject<SearchBarHandle | null>;
 }
 
 function SearchBar(props: Props) {
 	const [query, setQuery] = useState('');
 	const [searchStarted, setSearchStarted] = useState(false);
 	const searchId = useRef(uuid.create());
+
+	if (props.searchBarHandleRef) {
+		props.searchBarHandleRef.current = {
+			expand: () => {
+				setSearchStarted(true);
+			},
+		};
+	}
 
 	useEffect(() => {
 		function search(searchId: string, query: string, dispatch: Dispatch) {
@@ -128,7 +168,6 @@ function SearchBar(props: Props) {
 			void onExitSearch();
 		} else {
 			setSearchStarted(true);
-			focus('SearchBar::onSearchButtonClick', props.inputRef.current);
 			props.dispatch({
 				type: 'FOCUS_SET',
 				field: 'globalSearch',
@@ -136,6 +175,15 @@ function SearchBar(props: Props) {
 		}
 		// eslint-disable-next-line @seiyab/react-hooks/exhaustive-deps -- Old code before rule was applied
 	}, [onExitSearch, props.isFocused, searchStarted]);
+
+	// The input is only mounted after the search is expanded, so focus it
+	// right when it appears.
+	useEffect(() => {
+		if (searchStarted && props.inputRef?.current) {
+			focus('SearchBar::useEffect', props.inputRef.current);
+		}
+		// eslint-disable-next-line @seiyab/react-hooks/exhaustive-deps -- inputRef is a stable ref object
+	}, [searchStarted]);
 
 	useEffect(() => {
 		if (props.notesParentType !== 'Search') {
@@ -176,24 +224,41 @@ function SearchBar(props: Props) {
 	}, [props.globalQuery]);
 
 	return (
-		<Root className="search-bar">
-			<SearchInput
-				inputRef={props.inputRef}
-				value={query}
-				onChange={onChange}
-				onFocus={onFocus}
-				onBlur={onBlur}
-				onKeyDown={onKeyDown}
-				onSearchButtonClick={onSearchButtonClick}
-				searchStarted={searchStarted}
-				aria-controls='notes-list'
-			/>
+		<Root className="search-bar" searchExpanded={searchStarted || !!query}>
+			{searchStarted || query ? (
+				<SearchInput
+					inputRef={props.inputRef}
+					value={query}
+					onChange={onChange}
+					onFocus={onFocus}
+					onBlur={onBlur}
+					onKeyDown={onKeyDown}
+					onSearchButtonClick={onSearchButtonClick}
+					searchStarted={searchStarted}
+					aria-controls='notes-list'
+				/>
+			) : (
+				<button
+					type='button'
+					className='search-expand-button'
+					aria-label={_('Search')}
+					onClick={onSearchButtonClick}
+				>
+					<span className='icon icon-search'/>
+				</button>
+			)}
 		</Root>
 	);
 }
 
+export interface SearchBarHandle {
+	// Expand the collapsed search bar (mounts and focuses the input).
+	expand: ()=> void;
+}
+
 interface OwnProps {
 	windowId: string;
+	searchBarHandleRef?: React.MutableRefObject<SearchBarHandle | null>;
 }
 
 const mapStateToProps = (state: AppState, ownProps: OwnProps) => {
@@ -216,3 +281,4 @@ const mapStateToProps = (state: AppState, ownProps: OwnProps) => {
 };
 
 export default connect(mapStateToProps)(SearchBar);
+

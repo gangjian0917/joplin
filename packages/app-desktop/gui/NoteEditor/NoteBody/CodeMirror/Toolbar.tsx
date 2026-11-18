@@ -16,11 +16,14 @@ interface ToolbarProps {
 }
 
 function styles_(props: ToolbarProps) {
-	return buildStyle('CodeMirrorToolbar', props.themeId, () => {
+	return buildStyle('CodeMirrorToolbar', props.themeId, theme => {
 		return {
 			root: {
 				flex: 1,
 				marginBottom: 0,
+				backgroundColor: 'transparent',
+				paddingLeft: Math.max(4, theme.editorPaddingLeft - 4),
+				paddingRight: 12,
 			},
 		};
 	});

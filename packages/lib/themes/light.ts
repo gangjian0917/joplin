@@ -36,6 +36,8 @@ const theme: Theme = {
 	// It's dark text over gray background.
 	backgroundColor3: '#F4F5F6',
 	backgroundColorHover3: '#CBDAF1',
+	noteListSelectedBackgroundColor: '#d9e8df',
+	noteListSelectedTextColor: '#32373F',
 	color3: '#627284',
 
 	// Color scheme "4" is used for secondary-style buttons. It makes a white

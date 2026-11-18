@@ -188,7 +188,17 @@ class NoteSearchBar extends React.Component<Props> {
 						onKeyDown={this.searchInput_keyDown}
 						ref={this.searchInputRef}
 						type="text"
-						style={{ width: 200, marginRight: 5, backgroundColor: this.backgroundColor, color: theme.color }}
+						style={{
+							width: 210,
+							height: 24,
+							marginRight: 6,
+							padding: '0 8px',
+							borderRadius: 6,
+							border: `1px solid ${theme.dividerColor}`,
+							backgroundColor: this.backgroundColor,
+							color: theme.color,
+							fontSize: 12,
+						}}
 					/>
 					{allowScrolling ? previousButton : null}
 					{allowScrolling ? nextButton : null}

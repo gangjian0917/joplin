@@ -2,10 +2,12 @@
 .sidebar-expand-icon {
 	width: 16px;
 	max-width: 16px;
-	opacity: 0.5px;
-	font-size: calc(var(--joplin-toolbar-icon-size) * 0.8);
+	opacity: 0.55;
+	font-size: 11px;
 	display: flex;
+	align-items: center;
 	justify-content: center;
+	transition: opacity 0.12s ease;
 
 	&:not(.-visible) {
 		visibility: hidden;

@@ -14,7 +14,7 @@ import Folder from '@joplin/lib/models/Folder';
 import bridge from '../../../services/bridge';
 import MenuUtils from '@joplin/lib/services/commands/MenuUtils';
 import CommandService from '@joplin/lib/services/CommandService';
-import { FolderEntity } from '@joplin/lib/services/database/types';
+import { FolderEntity, FolderIcon } from '@joplin/lib/services/database/types';
 import InteropService from '@joplin/lib/services/interop/InteropService';
 import InteropServiceHelper from '../../../InteropServiceHelper';
 import Setting from '@joplin/lib/models/Setting';
@@ -50,6 +50,7 @@ interface Props {
 	selectedIndex: number;
 	selectedIndexes: number[];
 	listItems: ListItem[];
+	isCompact?: boolean;
 }
 
 type ItemContextMenuListener = MouseEventHandler<HTMLElement>;
@@ -386,6 +387,20 @@ const useOnRenderItem = (props: Props) => {
 	const showFolderIcons = useMemo(() => {
 		return Folder.shouldShowFolderIcons(props.folders);
 	}, [props.folders]);
+
+	// Sum of note_count of all direct children, per parent folder id. Precomputed
+	// once instead of looping over all folders for every visible item render.
+	// note_count is an in-memory display attribute set by Folder.addNoteCounts —
+	// it is not a synced column.
+	const childNoteCountByParentId = useMemo(() => {
+		const output = new Map<string, number>();
+		for (const folder of props.folders) {
+			if (!folder.parent_id) continue;
+			output.set(folder.parent_id, (output.get(folder.parent_id) ?? 0) + ((folder as FolderEntity & { note_count?: number }).note_count ?? 0));
+		}
+		return output;
+	}, [props.folders]);
+
 	const publishedFolderIds = useMemo(() => {
 		const output = new Set(props.shares.filter(share => share.type === ShareType.PublishedFolder).map(share => share.folder_id));
 		for (const folder of props.folders) {
@@ -402,6 +417,16 @@ const useOnRenderItem = (props: Props) => {
 	}, [props.folders, props.shares]);
 
 	const itemCount = props.listItems.length;
+	// Parsed once per folders change instead of on every render of every
+	// visible item — unserializeIcon does a JSON.parse per call.
+	const folderIcons = useMemo(() => {
+		const output = new Map<string, FolderIcon>();
+		for (const folder of props.folders) {
+			if (folder.icon) output.set(folder.id, Folder.unserializeIcon(folder.icon));
+		}
+		return output;
+	}, [props.folders]);
+	const collapsedFolderIdSet = useMemo(() => new Set(props.collapsedFolderIds), [props.collapsedFolderIds]);
 	return useCallback((item: ListItem, index: number) => {
 		const primarySelected = props.selectedIndex === index;
 		const selected = primarySelected || props.selectedIndexes.includes(index);
@@ -432,10 +457,11 @@ const useOnRenderItem = (props: Props) => {
 				tag={tag}
 				itemCount={itemCount}
 				index={index}
+				isCompact={props.isCompact}
 			/>;
 		} else if (item.kind === ListItemType.Folder) {
 			const folder = item.folder;
-			const isExpanded = props.collapsedFolderIds.indexOf(folder.id) < 0;
+			const isExpanded = !collapsedFolderIdSet.has(folder.id);
 			let noteCount = (folder as FolderEntity & { note_count?: number }).note_count;
 
 			// For now hide the count for folders in the trash because it doesn't work and getting it to
@@ -444,11 +470,7 @@ const useOnRenderItem = (props: Props) => {
 
 			// Thunderbird count: Subtract children note_count from parent folder if it expanded.
 			if (isExpanded) {
-				for (let i = 0; i < props.folders.length; i++) {
-					if (props.folders[i].parent_id === folder.id) {
-						noteCount -= (props.folders[i] as FolderEntity & { note_count?: number }).note_count;
-					}
-				}
+				noteCount -= childNoteCountByParentId.get(folder.id) ?? 0;
 			}
 			return <FolderItem
 				key={item.key}
@@ -456,7 +478,7 @@ const useOnRenderItem = (props: Props) => {
 				selectionState={selectionState}
 				folderId={folder.id}
 				folderTitle={item.label}
-				folderIcon={Folder.unserializeIcon(folder.icon)}
+				folderIcon={folderIcons.get(folder.id) ?? null}
 				depth={item.depth}
 				isExpanded={isExpanded}
 				hasChildren={item.hasChildren}
@@ -470,9 +492,10 @@ const useOnRenderItem = (props: Props) => {
 				shareId={folder.share_id}
 				isPublished={publishedFolderIds.has(folder.id)}
 				parentId={folder.parent_id}
-				showFolderIcon={showFolderIcons}
+				showFolderIcon={showFolderIcons || !!props.isCompact}
 				index={index}
 				itemCount={itemCount}
+				isCompact={props.isCompact}
 			/>;
 		} else if (item.kind === ListItemType.Header) {
 			return <HeaderItem
@@ -483,6 +506,7 @@ const useOnRenderItem = (props: Props) => {
 				onDrop={item.supportsFolderDrop ? onFolderDrop_ : null}
 				index={index}
 				itemCount={itemCount}
+				isCompact={props.isCompact}
 			/>;
 		} else if (item.kind === ListItemType.AllNotes) {
 			return <AllNotesItem
@@ -492,6 +516,7 @@ const useOnRenderItem = (props: Props) => {
 				item={item}
 				index={index}
 				itemCount={itemCount}
+				isCompact={props.isCompact}
 			/>;
 		} else if (item.kind === ListItemType.Spacer) {
 			return (
@@ -520,14 +545,16 @@ const useOnRenderItem = (props: Props) => {
 		onFolderToggleClick_,
 		onItemContextMenu,
 		onTagDrop_,
-		props.collapsedFolderIds,
-		props.folders,
+		childNoteCountByParentId,
+		collapsedFolderIdSet,
+		folderIcons,
 		publishedFolderIds,
 		showFolderIcons,
 		props.selectedIndex,
 		props.selectedIndexes,
 		props.containerRef,
 		itemCount,
+		props.isCompact,
 	]);
 };
 

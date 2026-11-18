@@ -4,64 +4,63 @@ import { CSSProperties } from 'react';
 
 export default function styles(props: Props) {
 	return buildStyle(['ToggleEditorsButton', props.value], props.themeId, theme => {
-		const iconSize = 15;
-		const mdIconWidth = iconSize * 1.25;
-		const buttonHeight = theme.toolbarHeight - 7;
-		const mdIconPadding = Math.round((buttonHeight - iconSize) / 2) + 3;
+		const iconSize = 13;
+		const segmentWidth = 28;
+		const segmentHeight = 18;
 
 		const innerButton: CSSProperties = {
-			borderStyle: 'solid',
-			borderColor: theme.color3,
-			borderWidth: 1,
-			borderRadius: 0,
-			width: mdIconWidth + mdIconPadding * 2,
-			height: buttonHeight,
+			border: 'none',
+			borderRadius: 5,
+			width: segmentWidth,
+			height: segmentHeight,
 			display: 'flex',
+			alignItems: 'center',
 			justifyContent: 'center',
+			transition: 'background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease',
 		};
 
 		const output: Record<string, CSSProperties> = {
 			button: {
-				border: 'none',
-				padding: 0,
+				border: `1px solid ${theme.dividerColor}`,
+				borderRadius: 7,
+				padding: 2,
+				height: 24,
+				boxSizing: 'border-box',
 				display: 'flex',
 				flexDirection: 'row',
 				alignItems: 'center',
-				background: 'none',
+				gap: 2,
+				backgroundColor: theme.backgroundColorHover3,
+				cursor: 'pointer',
 			},
 			leftInnerButton: {
 				...innerButton,
-				borderTopLeftRadius: 4,
-				borderBottomLeftRadius: 4,
 			},
 			rightInnerButton: {
 				...innerButton,
-				borderTopRightRadius: 4,
-				borderBottomRightRadius: 4,
 			},
 			leftIcon: {
 				fontSize: iconSize,
-				position: 'relative',
-				top: 1,
 				color: theme.color3,
 			},
 			rightIcon: {
 				fontSize: iconSize - 1,
-				borderLeft: 'none',
-				position: 'relative',
-				top: 1,
 				color: theme.color3,
 			},
 		};
 
 		if (props.value === Value.Markdown) {
-			output.leftInnerButton.backgroundColor = theme.color3;
-			output.leftIcon.color = theme.backgroundColor3;
-			output.rightInnerButton.opacity = 0.5;
+			output.leftInnerButton.backgroundColor = theme.backgroundColor;
+			output.leftInnerButton.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.12)';
+			output.leftIcon.color = theme.color;
+			output.rightInnerButton.backgroundColor = 'transparent';
+			output.rightInnerButton.opacity = 0.55;
 		} else if (props.value === Value.RichText) {
-			output.rightInnerButton.backgroundColor = theme.color3;
-			output.rightIcon.color = theme.backgroundColor3;
-			output.leftInnerButton.opacity = 0.5;
+			output.rightInnerButton.backgroundColor = theme.backgroundColor;
+			output.rightInnerButton.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.12)';
+			output.rightIcon.color = theme.color;
+			output.leftInnerButton.backgroundColor = 'transparent';
+			output.leftInnerButton.opacity = 0.55;
 		}
 
 		return output;

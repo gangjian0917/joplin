@@ -24,6 +24,7 @@ import {
 } from './editorCommands/markdownCommands';
 import { tableNextCell, tablePreviousCell } from './editorCommands/tableCommands';
 import decoratorExtension from './extensions/markdownDecorationExtension';
+import autoHideScrollbarExtension from './extensions/autoHideScrollbarExtension';
 import computeSelectionFormatting from './utils/formatting/computeSelectionFormatting';
 import { selectionFormattingEqual } from '../SelectionFormatting';
 import configFromSettings from './configFromSettings';
@@ -317,6 +318,7 @@ const createEditor = (
 				overwriteModeExtension,
 				ctrlKeyStateClassExtension,
 				editorSettingsExtension(settings),
+				autoHideScrollbarExtension(),
 
 				selectedNoteIdExtension,
 

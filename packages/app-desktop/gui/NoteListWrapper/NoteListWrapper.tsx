@@ -33,6 +33,7 @@ interface Props {
 	notesSortOrderReverse: boolean;
 	columns: NoteListColumns;
 	selectedFolderId: string;
+	isLeftmost?: boolean;
 }
 
 const StyledRoot = styled.div`
@@ -40,6 +41,8 @@ const StyledRoot = styled.div`
 	flex-direction: column;
 	overflow: hidden;
 	width: 100%;
+	box-sizing: border-box;
+	border-right: 1px solid var(--joplin-divider-color);
 `;
 
 const getTextWidth = (newNoteButtonElement: Element, text: string): number => {
@@ -113,19 +116,16 @@ export default function NoteListWrapper(props: Props) {
 	const isMultiColumns = listRenderer ? listRenderer.multiColumns : false;
 	const columns = isMultiColumns ? props.columns : null;
 
-	const { breakpoint, dynamicBreakpoints, lineCount } = useNoteListControlsBreakpoints(props.size.width, newNoteButtonElement, props.selectedFolderId);
+	const { breakpoint, dynamicBreakpoints } = useNoteListControlsBreakpoints(props.size.width, newNoteButtonElement, props.selectedFolderId);
 
 	const noteListControlsButtonSize = ButtonSize.Small;
 	const noteListControlsPadding = theme.mainPadding;
-	const noteListControlsButtonVerticalGap = 5;
 
+	// The controls are a single row of icon buttons (new note, new to-do,
+	// sort order, search).
 	const noteListControlsHeight = useMemo(() => {
-		if (lineCount === 1) {
-			return buttonSizePx(noteListControlsButtonSize) + noteListControlsPadding * 2;
-		} else {
-			return buttonSizePx(noteListControlsButtonSize) * 2 + noteListControlsPadding * 2 + noteListControlsButtonVerticalGap;
-		}
-	}, [lineCount, noteListControlsButtonSize, noteListControlsPadding, noteListControlsButtonVerticalGap]);
+		return buttonSizePx(noteListControlsButtonSize) + noteListControlsPadding * 2 - 2;
+	}, [noteListControlsButtonSize, noteListControlsPadding]);
 
 	const noteListSize = useMemo(() => {
 		return {
@@ -177,17 +177,15 @@ export default function NoteListWrapper(props: Props) {
 	};
 
 	return (
-		<StyledRoot role='navigation' aria-label={_('Note list')}>
+		<StyledRoot role='navigation' aria-label={_('Note list')} className={props.isLeftmost ? 'is-leftmost-pane' : undefined}>
 			<NoteListControls
 				height={controlHeight}
 				width={noteListSize.width}
 				setNewNoteButtonElement={setNewNoteButtonElement}
 				breakpoint={breakpoint}
 				dynamicBreakpoints={dynamicBreakpoints}
-				lineCount={lineCount}
 				buttonSize={noteListControlsButtonSize}
 				padding={noteListControlsPadding}
-				buttonVerticalGap={noteListControlsButtonVerticalGap}
 				windowId={windowId}
 			/>
 			{renderHeader()}

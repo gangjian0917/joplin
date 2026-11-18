@@ -58,6 +58,8 @@ import OcrService from '@joplin/lib/services/ocr/OcrService';
 import OcrDriverTesseract from '@joplin/lib/services/ocr/drivers/OcrDriverTesseract';
 import OcrDriverTranscribe from '@joplin/lib/services/ocr/drivers/OcrDriverTranscribe';
 import SearchEngine from '@joplin/lib/services/search/SearchEngine';
+import { themeStyle } from '@joplin/lib/theme';
+import { ThemeAppearance } from '@joplin/lib/themes/type';
 import { PackageInfo } from '@joplin/lib/versionInfo';
 import { CustomContentProtocolHandler } from './utils/customProtocols/handleCustomProtocols';
 import { refreshFolders } from '@joplin/lib/folders-screen-utils';
@@ -184,6 +186,7 @@ class Application extends BaseApplication {
 
 		if (this.hasGui() && ((action.type === 'SETTING_UPDATE_ONE' && ['themeAutoDetect', 'theme', 'preferredLightTheme', 'preferredDarkTheme'].includes(action.key)) || action.type === 'SETTING_UPDATE_ALL')) {
 			this.handleThemeAutoDetect();
+			this.syncNativeThemeSource();
 		}
 
 		if (action.type === 'PLUGIN_ADD') {
@@ -203,6 +206,16 @@ class Application extends BaseApplication {
 		} else {
 			Setting.setValue('theme', Setting.value('preferredLightTheme'));
 		}
+	}
+
+	private syncNativeThemeSource() {
+		if (!shim.isMac()) return;
+		if (Setting.value('themeAutoDetect')) {
+			bridge().setNativeThemeSource('system');
+			return;
+		}
+		const appearance = themeStyle(Setting.value('theme')).appearance;
+		bridge().setNativeThemeSource(appearance === ThemeAppearance.Dark ? 'dark' : 'light');
 	}
 
 	private bridge_nativeThemeUpdated() {
@@ -751,6 +764,10 @@ class Application extends BaseApplication {
 			ipcRenderer.on('secondary-window-closing', (_event, windowId: string) => {
 				this.dispatch({ type: 'WINDOW_CLOSE', windowId });
 			});
+
+			ipcRenderer.on('window-fullscreen-changed', (_event, isFullScreen: boolean) => {
+				document.documentElement.classList.toggle('is-fullscreen', isFullScreen);
+			});
 		});
 
 		addTask('app/initPluginService', () => this.initPluginService());
@@ -816,6 +833,7 @@ class Application extends BaseApplication {
 		}
 
 		await this.applySettingsSideEffects();
+		this.syncNativeThemeSource();
 
 		if (Setting.value('sync.upgradeState') === Setting.SYNC_UPGRADE_STATE_MUST_DO) {
 			reg.logger().info('app.start: doing upgradeSyncTarget action');

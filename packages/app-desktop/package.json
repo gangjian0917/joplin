@@ -114,6 +114,21 @@
     },
     "mac": {
       "icon": "../../Assets/macOs.icns",
+      "hardenedRuntime": true,
+      "notarize": false,
+      "entitlements": "./build-mac/entitlements.mac.inherit.plist",
+      "extendInfo": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "joplin"
+            ],
+            "CFBundleTypeRole": "Editor",
+            "CFBundleURLName": "org.joplinapp.x-callback-url"
+          }
+        ]
+      },
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
       "target": [
         {
           "target": "dmg",
@@ -128,20 +143,7 @@
           ]
         }
       ],
-      "hardenedRuntime": true,
-      "notarize": false,
-      "entitlements": "./build-mac/entitlements.mac.inherit.plist",
-      "extendInfo": {
-        "CFBundleURLTypes": [
-          {
-            "CFBundleURLSchemes": [
-              "joplin"
-            ],
-            "CFBundleTypeRole": "Editor",
-            "CFBundleURLName": "org.joplinapp.x-callback-url"
-          }
-        ]
-      }
+      "identity": null
     },
     "linux": {
       "icon": "../../Assets/LinuxIcons",
@@ -168,7 +170,6 @@
   },
   "homepage": "https://github.com/laurent22/joplin#readme",
   "devDependencies": {
-    "7zip-bin": "5.2.0",
     "@axe-core/playwright": "4.11.3",
     "@electron/notarize": "2.5.0",
     "@electron/rebuild": "4.1.0",
@@ -193,6 +194,7 @@
     "@types/react-redux": "7.1.34",
     "@types/semver": "7.7.1",
     "@types/styled-components": "5.1.36",
+    "7zip-bin": "5.2.0",
     "async-mutex": "0.5.0",
     "axios": "^1.7.7",
     "codemirror": "5.65.9",

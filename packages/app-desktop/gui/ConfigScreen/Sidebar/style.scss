@@ -43,7 +43,7 @@
 		}
 
 		&.selected {
-			background: var(--joplin-selected-color2);
+			background: var(--joplin-sidebar-selected-background-color, var(--joplin-selected-color2));
 			opacity: 1;
 
 			> .icon {

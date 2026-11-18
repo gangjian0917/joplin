@@ -71,8 +71,10 @@ const StatusBar: React.FC<Props> = props => {
 				}}
 				style={{
 					...theme.clickableTextStyle,
+					fontSize: 12,
+					color: theme.colorFaded,
 					whiteSpace: 'nowrap',
-					opacity: props.setTagsToolbarButtonInfo.enabled ? 1 : 0.5,
+					opacity: props.setTagsToolbarButtonInfo.enabled ? 0.85 : 0.45,
 					cursor: props.setTagsToolbarButtonInfo.enabled ? 'pointer' : 'default',
 				}}
 			>

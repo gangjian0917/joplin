@@ -8,6 +8,7 @@ interface Props {
 	onKeyDown: React.KeyboardEventHandler;
 	allFoldersCollapsed: boolean;
 	hasSubFolders: boolean;
+	isCompact?: boolean;
 }
 
 const onAddFolderButtonClick = () => {
@@ -62,8 +63,8 @@ const useOnRenderListWrapper = (props: Props) => {
 		const listHasValidSelection = props.selectedIndex >= 0;
 		const allowContainerFocus = !listHasValidSelection;
 		return <>
-			<CollapseExpandAllButton allFoldersCollapsed={props.allFoldersCollapsed} hasSubFolders={props.hasSubFolders}/>
-			<NewFolderButton/>
+			{props.isCompact ? null : <CollapseExpandAllButton allFoldersCollapsed={props.allFoldersCollapsed} hasSubFolders={props.hasSubFolders}/>}
+			{props.isCompact ? null : <NewFolderButton/>}
 			<div
 				role='tree'
 				className='sidebar-list-items-wrapper'
@@ -73,7 +74,7 @@ const useOnRenderListWrapper = (props: Props) => {
 				{...listItems}
 			</div>
 		</>;
-	}, [props.selectedIndex, props.onKeyDown, props.allFoldersCollapsed, props.hasSubFolders]);
+	}, [props.selectedIndex, props.onKeyDown, props.allFoldersCollapsed, props.hasSubFolders, props.isCompact]);
 };
 
 export default useOnRenderListWrapper;

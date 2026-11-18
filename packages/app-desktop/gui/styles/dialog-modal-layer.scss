@@ -18,18 +18,20 @@
 	> .content {
 		background-color: var(--joplin-background-color);
 		color: var(--joplin-color);
-		padding: 16px;
-		box-shadow: 6px 6px 20px rgba(0,0,0,0.5);
+		padding: 18px;
+		border: 1px solid var(--joplin-divider-color);
+		box-shadow: 0 20px 56px rgba(0,0,0,0.28);
 		min-height: fit-content;
 		display: flex;
 		flex-direction: column;
-		border-radius: 10px;
+		border-radius: 12px;
 		margin-left: auto;
 		margin-right: auto;
 	}
 
 	&::backdrop {
-		background-color: rgba(0,0,0,0.5);
+		background-color: rgba(0,0,0,0.35);
+		backdrop-filter: blur(4px);
 	}
 
 	&.-fullscreen {

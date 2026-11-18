@@ -1,6 +1,10 @@
 import { Size } from '@joplin/utils/types';
 import { useMemo } from 'react';
 
+// Extra lines rendered above and below the visible window, so that fast
+// scrolling does not reveal unrendered (blank) rows before React catches up.
+const OVERSCAN_LINES = 4;
+
 const useVisibleRange = (itemsPerLine: number, scrollTop: number, listSize: Size, itemSize: Size, noteCount: number) => {
 	const startLineIndexFloat = useMemo(() => {
 		return scrollTop / itemSize.height;
@@ -27,11 +31,12 @@ const useVisibleRange = (itemsPerLine: number, scrollTop: number, listSize: Size
 	}, [visibleLineCount, itemsPerLine]);
 
 	const startNoteIndex = useMemo(() => {
-		return itemsPerLine * startLineIndex;
+		const output = itemsPerLine * (startLineIndex - OVERSCAN_LINES);
+		return Math.max(0, output);
 	}, [itemsPerLine, startLineIndex]);
 
 	const endNoteIndex = useMemo(() => {
-		let output = (endLineIndex + 1) * itemsPerLine - 1;
+		let output = (endLineIndex + 1 + OVERSCAN_LINES) * itemsPerLine - 1;
 		if (output >= noteCount) output = noteCount - 1;
 		return output;
 	}, [endLineIndex, itemsPerLine, noteCount]);

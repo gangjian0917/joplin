@@ -34,6 +34,10 @@ const LayoutItemContainer: React.FC<Props> = ({
 	const canResizeBottom = parentDir === LayoutItemDirection.Column && !isLastChild;
 
 	const className = `resizableLayoutItem rli-${item.key}`;
+	const handleClasses = {
+		right: 'pane-resize-handle-right',
+		bottom: 'pane-resize-handle-bottom',
+	};
 	const enable = {
 		top: false,
 		right: canResizeRight,
@@ -55,6 +59,7 @@ const LayoutItemContainer: React.FC<Props> = ({
 			onResize={onResize}
 			onResizeStop={onResizeStop}
 			enable={enable}
+			handleClasses={handleClasses}
 			minWidth={'minWidth' in item ? item.minWidth : itemMinWidth}
 			minHeight={'minHeight' in item ? item.minHeight : itemMinHeight}
 			maxWidth={resizedItemMaxSize?.width}

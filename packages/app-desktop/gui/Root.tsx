@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Dispatch } from 'redux';
+import shim from '@joplin/lib/shim';
 import app from '../app';
 import { AppState, AppStateDialog } from '../app.reducer';
 import MainScreen from './MainScreen';
@@ -79,6 +80,13 @@ async function initialize() {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Old class component with implicit state shape; tightening requires structural change to the screen
 class RootComponent extends React.Component<Props, any> {
+	public constructor(props: Props) {
+		super(props);
+		if (shim.isMac()) {
+			document.documentElement.classList.add('mac-hidden-titlebar');
+		}
+	}
+
 	public async componentDidMount() {
 		if (this.props.appState === 'starting') {
 			this.props.dispatch({

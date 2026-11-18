@@ -35,6 +35,8 @@ const input: Theme = {
 	// It's dark text over gray background.
 	backgroundColor3: '#F4F5F6',
 	backgroundColorHover3: '#CBDAF1',
+	noteListSelectedBackgroundColor: '#d9e8df',
+	noteListSelectedTextColor: '#32373F',
 	color3: '#738598',
 
 	// Color scheme "4" is used for secondary-style buttons. It makes a white
@@ -100,6 +102,8 @@ const expected = `
 	--joplin-destructive-color: #F00000;
 	--joplin-divider-color: #dddddd;
 	--joplin-header-background-color: #ffffff;
+	--joplin-note-list-selected-background-color: #d9e8df;
+	--joplin-note-list-selected-text-color: #32373F;
 	--joplin-odd-background-color: #eeeeee;
 	--joplin-raised-background-color: #e5e5e5;
 	--joplin-raised-color: #222222;

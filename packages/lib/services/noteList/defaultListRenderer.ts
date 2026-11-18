@@ -38,7 +38,7 @@ const renderer: ListRenderer = {
 
 	itemSize: {
 		width: 0,
-		height: 34,
+		height: 36,
 	},
 
 	dependencies: [
@@ -58,23 +58,14 @@ const renderer: ListRenderer = {
 	],
 
 	itemCss: // css
-		`	
+		`
 		& {
 			box-sizing: border-box;
-			padding: 2px 6px;
+			padding: 1.5px 8px;
 		}
 
-		&:before {
-			content: '';
-			border-bottom: 1px solid var(--joplin-divider-color);
-			width: calc(100% - 28px);
-			position: absolute;
-			bottom: 0;
-			left: 14px;
-		}
-	
 		> .content.-selected {
-			background-color: var(--joplin-selected-color);
+			background-color: var(--joplin-note-list-selected-background-color, var(--joplin-selected-color));
 		}
 
 		&:hover > .content:not(.-selected),
@@ -88,8 +79,9 @@ const renderer: ListRenderer = {
 			position: relative;
 			width: 100%;
 			height: 100%;
-			border-radius: 6px;
-			padding-left: 10px;
+			border-radius: 8px;
+			padding: 0 12px;
+			transition: background-color 0.12s ease;
 	
 			> .checkbox {
 				display: flex;
@@ -97,6 +89,7 @@ const renderer: ListRenderer = {
 
 				> input {
 					margin: 0px 10px 1px 0px;
+					accent-color: var(--joplin-selected-color2);
 				}
 			}
 	
@@ -110,9 +103,16 @@ const renderer: ListRenderer = {
 				cursor: default;
 				white-space: nowrap;
 				flex: 1 1 0%;
+				min-width: 0;
 				display: flex;
 				align-items: center;
 				overflow: hidden;
+
+				> span {
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+				}
 
 				> .watchedicon {
 					display: none;
@@ -130,7 +130,6 @@ const renderer: ListRenderer = {
 			> .checkbox-pie {
 				display: flex;
 				align-items: center;
-				padding-right: 12px;
 				padding-left: 8px;
 			}
 		}
@@ -149,12 +148,16 @@ const renderer: ListRenderer = {
 			}
 		}
 
+		> .content.-selected > .title {
+			font-weight: 600;
+		}
+
 		> .content.-selected > .title,
 		> .content.-published.-selected > .title,
 		> .content.-shared.-selected > .title,
 		> .content.-selected > .title > .watchedicon,
 		> .content.-selected > .title > .lockedicon {
-			color: var(--joplin-selected-text-color, var(--joplin-color));
+			color: var(--joplin-note-list-selected-text-color, var(--joplin-selected-text-color, var(--joplin-color)));
 		}
 
 		> .content.-completed {

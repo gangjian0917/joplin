@@ -29,8 +29,8 @@ function TagList(props: Props) {
 		output.boxSizing = 'border-box';
 		output.fontSize = theme.fontSize;
 		output.whiteSpace = 'nowrap';
-		output.paddingTop = 8;
-		output.paddingBottom = 8;
+		output.paddingTop = 4;
+		output.paddingBottom = 4;
 		return output;
 	}, [props.style, props.themeId]);
 

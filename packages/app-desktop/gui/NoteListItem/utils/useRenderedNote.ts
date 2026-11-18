@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ListRenderer, ListRendererDependency, NoteListColumns } from '@joplin/lib/services/plugins/api/noteListType';
 import Note from '@joplin/lib/models/Note';
 import { FolderEntity, NoteEntity, TagEntity } from '@joplin/lib/services/database/types';
@@ -25,6 +25,12 @@ const hashContent = (content: unknown) => {
 
 export default (note: NoteEntity, isSelected: boolean, isWatched: boolean, isPublished: boolean, listRenderer: ListRenderer, highlightedWords: HighlightedWord[], itemIndex: number, columns: NoteListColumns) => {
 	const [renderedNote, setRenderedNote] = useState<RenderedNote>(null);
+
+	// Read via ref instead of a dependency: keeping renderedNote in the effect
+	// deps made the effect re-run after every setRenderedNote, and re-running
+	// the async render pipeline on every scroll re-render.
+	const renderedNoteRef = useRef<RenderedNote>(null);
+	renderedNoteRef.current = renderedNote;
 
 	let dependencies = columns && columns.length ? columns.map(c => c.name) as ListRendererDependency[] : [];
 	if (listRenderer.dependencies) dependencies = dependencies.concat(listRenderer.dependencies);
@@ -59,7 +65,7 @@ export default (note: NoteEntity, isSelected: boolean, isWatched: boolean, isPub
 				folder ? folder.title : '',
 			]);
 
-			if (renderedNote && renderedNote.hash === viewHash) return null;
+			if (renderedNoteRef.current && renderedNoteRef.current.hash === viewHash) return null;
 
 			const noteTitleHtml = getNoteTitleHtml(highlightedWords, Note.displayTitle(note));
 
@@ -99,7 +105,7 @@ export default (note: NoteEntity, isSelected: boolean, isWatched: boolean, isPub
 		};
 
 		void renderNote();
-	}, [note, isSelected, isWatched, isPublished, listRenderer, renderedNote, columns]);
+	}, [note, isSelected, isWatched, isPublished, listRenderer, columns, highlightedWords, itemIndex]);
 
 	return renderedNote;
 };

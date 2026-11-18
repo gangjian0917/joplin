@@ -38,3 +38,79 @@
 		}
 	}
 }
+
+// Note-list search bar: rounded field with the magnifier on the left
+// and the clear (x) button on the right.
+.search-bar > .search-input {
+	position: relative;
+	display: flex;
+	align-items: center;
+	width: 100%;
+
+	> .field {
+		background-color: var(--joplin-background-color);
+		border: 1px solid var(--joplin-divider-color);
+		border-radius: 8px;
+		padding: 0 26px 0 28px;
+		height: 28px;
+		max-height: 28px;
+		box-sizing: border-box;
+		transition: border-color 0.12s ease, box-shadow 0.12s ease;
+
+		&:focus {
+			outline: none;
+			border-color: var(--joplin-focus-outline-color);
+			box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--joplin-focus-outline-color) 28%, transparent);
+		}
+	}
+
+	&:before {
+		content: '';
+		position: absolute;
+		left: 10px;
+		top: calc(50% - 1px);
+		transform: translateY(-50%);
+		width: 10px;
+		height: 10px;
+		box-sizing: border-box;
+		border: 1.6px solid var(--joplin-color-faded);
+		border-radius: 50%;
+		pointer-events: none;
+	}
+
+	&:after {
+		content: '';
+		position: absolute;
+		left: 18px;
+		top: calc(50% + 4px);
+		width: 4.5px;
+		height: 1.6px;
+		border-radius: 1px;
+		background: var(--joplin-color-faded);
+		transform: rotate(45deg);
+		pointer-events: none;
+	}
+
+	> .button {
+		position: absolute;
+		right: 3px;
+		top: 50%;
+		transform: translateY(-50%);
+		height: 22px;
+		width: 22px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 6px;
+		transition: background-color 0.12s ease;
+
+		&:hover {
+			background-color: var(--joplin-background-color-hover3);
+		}
+
+		> .icon {
+			font-size: 12px;
+			color: var(--joplin-color-faded);
+		}
+	}
+}

@@ -2,12 +2,17 @@
 .editor-status-bar {
 	display: flex;
 	flex-direction: row;
+	align-items: center;
+	min-height: 36px;
+	padding-right: 12px;
+	border-top: 1px solid var(--joplin-divider-color);
+	background-color: var(--joplin-background-color);
 
 	> .spacer {
 		flex-grow: 1;
 	}
 
 	> .status {
-		align-self: end;
+		align-self: center;
 	}
 }

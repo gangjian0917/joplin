@@ -7,6 +7,11 @@ import { FolderLoadOptions } from './models/utils/types';
 const refreshCalls_: boolean[] = [];
 let scheduleRefreshFoldersIID_: ReturnType<typeof shim.setTimeout> = null;
 
+// Minimum quiet time between two full folder-count recomputes (ms). See
+// scheduleRefreshFolders.
+const MIN_REFRESH_INTERVAL_ = 5000;
+let lastRefreshFoldersTime_ = 0;
+
 export const allForDisplay = async (options: FolderLoadOptions = {}) => {
 	const orderDir = Setting.value('folders.sortOrder.reverse') ? 'DESC' : 'ASC';
 
@@ -68,10 +73,19 @@ export const refreshFolders = async (dispatch: Dispatch, selectedFolderId: strin
 
 export const scheduleRefreshFolders = async (dispatch: Dispatch, selectedFolderId: string) => {
 	if (scheduleRefreshFoldersIID_) shim.clearTimeout(scheduleRefreshFoldersIID_);
+	// During sync or other bulk operations, many NOTE_UPDATE_ONE actions fire in
+	// a row. The debounce coalesces them, but each completion used to rearm a
+	// new 1s timer immediately, so a long sync recomputed all folder counts
+	// once per second for its whole duration. Enforce a minimum quiet period
+	// between full recomputes: requests arriving within the window are deferred
+	// to its end, not dropped.
+	const sinceLast = Date.now() - lastRefreshFoldersTime_;
+	const delay = sinceLast < MIN_REFRESH_INTERVAL_ ? MIN_REFRESH_INTERVAL_ - sinceLast : 1000;
 	scheduleRefreshFoldersIID_ = shim.setTimeout(() => {
 		scheduleRefreshFoldersIID_ = null;
+		lastRefreshFoldersTime_ = Date.now();
 		void refreshFolders(dispatch, selectedFolderId);
-	}, 1000);
+	}, delay);
 };
 
 export const cancelTimers = async () => {

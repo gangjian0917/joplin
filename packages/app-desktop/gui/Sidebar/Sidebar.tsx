@@ -1,6 +1,7 @@
 import * as React from 'react';
+import { useEffect, useState } from 'react';
 import { StyledSyncReportText, StyledSyncReport, StyledSynchronizeButton, StyledRoot } from './styles';
-import { ButtonLevel } from '../Button/Button';
+import { ButtonLevel, ButtonSize } from '../Button/Button';
 import CommandService from '@joplin/lib/services/CommandService';
 import Synchronizer, { type ProgressReport } from '@joplin/lib/Synchronizer';
 import Setting from '@joplin/lib/models/Setting';
@@ -22,27 +23,44 @@ interface Props {
 	syncStarted: boolean;
 	syncPending: boolean;
 	syncReportIsVisible: boolean;
+	width?: number;
 }
 
-const syncCompletedWithoutError = (syncReport: ProgressReport) => {
-	return syncReport.completedTime && (!syncReport.errors || !syncReport.errors.length);
-};
-
 const SidebarComponent = (props: Props) => {
+	const [rootElement, setRootElement] = useState<HTMLDivElement|null>(null);
+	const [measuredWidth, setMeasuredWidth] = useState(0);
+
+	useEffect(() => {
+		if (!rootElement) return () => {};
+		setMeasuredWidth(rootElement.clientWidth);
+		if (typeof ResizeObserver === 'undefined') return () => {};
+		const observer = new ResizeObserver(() => {
+			setMeasuredWidth(rootElement.clientWidth);
+		});
+		observer.observe(rootElement);
+		return () => {
+			observer.disconnect();
+		};
+	}, [rootElement]);
+
+	const effectiveWidth = measuredWidth || props.width || 0;
+	const isCompact = effectiveWidth > 0 && effectiveWidth <= 84;
+
 	const renderSynchronizeButton = (type: string) => {
 		const label = type === 'sync' ? _('Synchronise') : _('Cancel');
-		const nothingToSync = type === 'sync' && !props.syncPending && syncCompletedWithoutError(props.syncReport);
 		const syncHasErrors = type === 'sync' && !props.syncPending && !!props.syncReport.errors?.length;
-		const iconName = syncHasErrors ? 'fas fa-exclamation-triangle' : nothingToSync ? 'fas fa-check' : 'icon-sync';
+		const iconName = syncHasErrors ? 'fas fa-exclamation-triangle' : 'icon-sync';
 
 		return (
 			<StyledSynchronizeButton
 				level={ButtonLevel.SidebarSecondary}
-				className={`sidebar-sync-button ${type === 'sync' ? '' : '-syncing'} ${nothingToSync ? '-synced' : ''} ${syncHasErrors ? '-error' : ''}`}
+				size={isCompact ? ButtonSize.Small : ButtonSize.Normal}
+				isSquare={true}
+				className={`sidebar-sync-button ${type === 'sync' ? '' : '-syncing'} ${syncHasErrors ? '-error' : ''} ${isCompact ? '-compact' : ''}`}
 				iconName={iconName}
 				iconLabel={syncHasErrors ? _('Synchronisation error') : undefined}
 				key="sync_button"
-				title={label}
+				tooltip={label}
 				onClick={() => {
 					void CommandService.instance().execute('synchronize', type !== 'sync');
 				}}
@@ -98,11 +116,12 @@ const SidebarComponent = (props: Props) => {
 	);
 
 	return (
-		<StyledRoot className='sidebar _scrollbar2' role='navigation' aria-label={_('Sidebar')}>
-			<div style={{ flex: 1 }}><FolderAndTagList/></div>
-			<div style={{ flex: 0, padding: theme.mainPadding }}>
-				{syncReportToggle}
-				{syncReportComp}
+		<StyledRoot ref={setRootElement} className={`sidebar _scrollbar2${isCompact ? ' -compact' : ''}`} role='navigation' aria-label={_('Sidebar')}>
+			<div className='sidebar-titlebar-drag'/>
+			<div style={{ flex: 1, minHeight: 0, paddingTop: 4 }}><FolderAndTagList isCompact={isCompact}/></div>
+			<div style={isCompact ? { flex: 0, padding: '8px 0 10px', borderTop: '1px solid var(--joplin-divider-color)', display: 'flex', justifyContent: 'center' } : { flex: 0, padding: '8px 10px 10px', borderTop: '1px solid var(--joplin-divider-color)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+				{isCompact ? null : syncReportToggle}
+				{isCompact ? null : syncReportComp}
 				{syncButton}
 			</div>
 		</StyledRoot>

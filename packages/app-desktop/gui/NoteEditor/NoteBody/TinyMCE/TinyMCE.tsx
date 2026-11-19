@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, useMemo, Ref } from 'react';
+import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, useMemo, useContext, Ref } from 'react';
+import { createPortal } from 'react-dom';
 import { ScrollOptions, ScrollOptionTypes, EditorCommand, NoteBodyEditorProps, ResourceInfos, HtmlToMarkdownHandler, ScrollToTextValue, NoteBodyEditorRef } from '../../utils/types';
 import { resourcesStatus, commandAttachFileToBody, getResourcesFromPasteEvent, processPastedHtml } from '../../utils/resourceHandling';
 import attachedResources from '@joplin/lib/utils/attachedResources';
@@ -28,6 +29,7 @@ import type { Bookmark, Editor, EditorEvent } from 'tinymce';
 import { joplinCommandToTinyMceCommands, TinyMceCommand } from './utils/joplinCommandToTinyMceCommands';
 import shouldPasteResources from './utils/shouldPasteResources';
 import lightTheme from '@joplin/lib/themes/light';
+import { EditorToolbarHostContext } from '../../EditorToolbarHost';
 import { Options as NoteStyleOptions } from '@joplin/renderer/noteStyle';
 import markupRenderOptions from '../../utils/markupRenderOptions';
 import { DropHandler } from '../../utils/useDropHandler';
@@ -100,6 +102,7 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 	const [editorContainer, setEditorContainer] = useState<HTMLDivElement|null>(null);
 	const editorContainerDom = useDocument(editorContainer);
 	const [editor, setEditor] = useState<Editor|null>(null);
+	const toolbarSlots = useContext(EditorToolbarHostContext);
 	const [scriptLoaded, setScriptLoaded] = useState(false);
 	const [editorReady, setEditorReady] = useState(false);
 	const [draggingStarted, setDraggingStarted] = useState(false);
@@ -431,11 +434,14 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 			}
 
 			.joplin-tinymce .tox-editor-header.tox-editor-header {
-				margin-left: ${styles.leftExtraToolbarContainer.width + styles.leftExtraToolbarContainer.paddingLeft + styles.leftExtraToolbarContainer.paddingRight}px;
-				margin-right: ${styles.rightExtraToolbarContainer.width + styles.rightExtraToolbarContainer.paddingLeft + styles.rightExtraToolbarContainer.paddingRight}px;
-				padding: 0;
-				box-shadow: none;
-				border-top: 1px solid ${theme.dividerColor} !important;
+				display: none !important;
+			}
+
+			.joplin-tinymce .tox-editor-container,
+			.joplin-tinymce .tox-sidebar-wrap,
+			.joplin-tinymce .tox-edit-area,
+			.joplin-tinymce .tox-edit-area__iframe {
+				height: 100% !important;
 			}
 
 			.joplin-tinymce .tox-edit-area {
@@ -595,19 +601,11 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 			.tox .tox-tbtn {
 				height: ${theme.toolbarHeight}px;
 				min-height: ${theme.toolbarHeight}px;
-				border-radius: 5px !important;
+				max-height: ${theme.toolbarHeight}px;
+				width: ${theme.toolbarHeight}px;
+				min-width: ${theme.toolbarHeight}px;
+				border-radius: 6px !important;
 				transition: background-color 0.12s ease, color 0.12s ease;
-			}
-
-			.tox .tox-tbtn[aria-haspopup=true] {
-				width: ${theme.toolbarHeight + 13}px;
-				min-width: ${theme.toolbarHeight + 13}px;
-			}
-
-			.tox .tox-tbtn > span,
-			.tox .tox-tbtn:active > span,
-			.tox .tox-tbtn:hover > span {
-				transform: scale(0.84);
 			}
 
 			.tox .tox-toolbar__primary,
@@ -687,7 +685,105 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 			.tox .tox-tbtn button,
 			.tox .tox-split-button,
 			.tox .tox-split-button button {
+				margin: 0 1px !important;
+				padding: 0 !important;
+				-webkit-appearance: none !important;
+				appearance: none !important;
+				border: 0 !important;
+				box-shadow: none !important;
+				outline: none !important;
+				background-image: none !important;
+			}
+
+			.tox .tox-toolbar,
+			.tox .tox-toolbar__primary,
+			.tox .tox-toolbar__group,
+			.tox .tox-tbtn,
+			.tox .tox-split-button {
+				flex-wrap: nowrap !important;
+			}
+
+			.tox .tox-tbtn,
+			.tox .tox-split-button {
+				display: inline-flex !important;
+				flex-direction: row !important;
+				align-items: center !important;
+				justify-content: center !important;
+			}
+
+			.tox .tox-tbtn > span,
+			.tox .tox-tbtn:active > span,
+			.tox .tox-tbtn:hover > span,
+			.tox .tox-tbtn--enabled > span,
+			.tox .tox-tbtn--enabled:hover > span {
+				transform: none !important;
+				display: flex !important;
+				align-items: center !important;
+				justify-content: center !important;
+			}
+
+			.tox .tox-tbtn .tox-icon svg {
+				width: 18px !important;
+				height: 18px !important;
+				display: block !important;
+				fill: none !important;
+				stroke: currentColor !important;
+			}
+
+			.tox .tox-tbtn:hover .tox-icon svg,
+			.tox .tox-tbtn--enabled .tox-icon svg,
+			.tox .tox-tbtn--enabled:hover .tox-icon svg {
+				color: inherit !important;
+			}
+
+			.tox .tox-tbtn .tox-icon svg .tox-icon-text-color__color {
+				stroke: none !important;
+			}
+
+			.tox .tox-tbtn[aria-haspopup=true] {
+				width: auto !important;
+				min-width: ${theme.toolbarHeight}px;
+				max-width: none !important;
+				padding: 0 2px !important;
+			}
+
+			.tox .tox-tbtn__select-chevron,
+			.tox .tox-split-button__chevron {
+				width: 12px !important;
+				min-width: 12px !important;
+				flex: none !important;
+				display: flex !important;
+				align-items: center !important;
+				justify-content: center !important;
+			}
+
+			.tox .tox-tbtn__select-chevron svg,
+			.tox .tox-split-button__chevron svg {
+				width: 12px !important;
+				height: 12px !important;
+				display: block !important;
+				fill: currentColor !important;
+				stroke: none !important;
+			}
+
+			.tox .tox-split-button {
+				height: ${theme.toolbarHeight}px !important;
+				max-height: ${theme.toolbarHeight}px !important;
+				width: auto !important;
+				overflow: hidden !important;
+				border-radius: 6px !important;
+			}
+
+			.tox .tox-split-button .tox-tbtn {
+				width: 22px !important;
+				min-width: 22px !important;
+				max-width: 22px !important;
 				margin: 0 !important;
+			}
+
+			.tox .tox-split-button:hover,
+			.tox .tox-split-button:focus {
+				box-shadow: none !important;
 			}
 		`));
 
@@ -750,7 +846,7 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 				'joplinInsert', 'joplinSup', 'joplinSub', 'forecolor', '|',
 				'link', 'joplinLinkToNote', 'joplinInlineCode', 'joplinCodeBlock', 'joplinAttach', '|',
 				'bullist', 'numlist', 'joplinChecklist', '|',
-				'h1', 'h2', 'h3', '|',
+				'joplinH1', 'joplinH2', 'joplinH3', '|',
 				'hr', '|',
 				'blockquote', '|',
 				'tableWithHeader', '|',
@@ -794,6 +890,9 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 				relative_urls: false,
 				branding: false,
 				statusbar: false,
+				// Keep every formatting control on one row. The default "floating"
+				// mode measures a content-sized header and wraps each group.
+				toolbar_mode: 'scrolling',
 				link_target_list: false,
 				// Handle the first table row as table header.
 				// https://www.tiny.cloud/docs/plugins/table/#table_header_type
@@ -1664,6 +1763,32 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 		// eslint-disable-next-line @seiyab/react-hooks/exhaustive-deps -- Old code before rule was applied
 	}, [props.onWillChange, props.onChange, props.contentMarkupLanguage, props.contentOriginalCss, editor]);
 
+	// The formatting toolbar is rendered into the note title row. TinyMCE builds it inside
+	// the editor, so move the header node after init. Cleanup puts it back when the slot
+	// changes; if the editor is already gone, drop the detached node.
+	useEffect(() => {
+		const center = toolbarSlots.center;
+		if (!editor || !editorReady || !center) return undefined;
+
+		const container = editor.getContainer();
+		const editorContainer = container.querySelector('.tox-editor-container');
+		const header = container.querySelector('.tox-editor-header') as HTMLElement | null;
+		if (!editorContainer || !header) return undefined;
+
+		center.appendChild(header);
+		const sidebar = container.querySelector('.tox-sidebar-wrap');
+
+		return () => {
+			if (!header.isConnected) return;
+			if (!editorContainer.isConnected) {
+				header.remove();
+				return;
+			}
+			if (sidebar && sidebar.parentElement === editorContainer) editorContainer.insertBefore(header, sidebar);
+			else editorContainer.prepend(header);
+		};
+	}, [editor, editorReady, toolbarSlots.center]);
+
 	// -----------------------------------------------------------------------------------------
 	// Destroy the editor when unmounting
 	// Note that this effect must always be last, otherwise other effects that access the
@@ -1698,6 +1823,21 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 
 	const leftButtonCommandNames = ['historyBackward', 'historyForward', 'toggleExternalEditing'];
 
+	const slottedExtraStyle: React.CSSProperties = {
+		display: 'flex',
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 2,
+		position: 'static',
+		height: 'auto',
+		width: 'auto',
+		border: 'none',
+		background: 'transparent',
+		paddingTop: 0,
+		paddingBottom: 0,
+		zIndex: 'auto',
+	};
+
 	function renderLeftExtraToolbarButtons() {
 		const buttons = [];
 		for (const info of props.noteToolbarButtonInfos) {
@@ -1705,8 +1845,14 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 			buttons.push(renderExtraToolbarButton(info.name, info));
 		}
 
+		const style = toolbarSlots.left ? {
+			...slottedExtraStyle,
+			paddingLeft: styles.leftExtraToolbarContainer.paddingLeft,
+			paddingRight: 4,
+		} : styles.leftExtraToolbarContainer;
+
 		return (
-			<div style={styles.leftExtraToolbarContainer}>
+			<div style={style}>
 				{buttons}
 			</div>
 		);
@@ -1729,8 +1875,14 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 			}
 		}
 
+		const style = toolbarSlots.right ? {
+			...slottedExtraStyle,
+			paddingLeft: 4,
+			paddingRight: 8,
+		} : styles.rightExtraToolbarContainer;
+
 		return (
-			<div style={styles.rightExtraToolbarContainer}>
+			<div style={style}>
 				{buttons}
 			</div>
 		);
@@ -1757,11 +1909,14 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 	const containerId = useMemo(() => {
 		return `tinymce-container-${Math.ceil(Math.random() * 1000)}-${Date.now()}`;
 	}, []);
+	const leftExtraButtons = renderLeftExtraToolbarButtons();
+	const rightExtraButtons = renderRightExtraToolbarButtons();
+
 	return (
 		<div style={styles.rootStyle} className="joplin-tinymce">
 			{renderDisabledOverlay()}
-			{renderLeftExtraToolbarButtons()}
-			{renderRightExtraToolbarButtons()}
+			{toolbarSlots.left ? createPortal(leftExtraButtons, toolbarSlots.left) : leftExtraButtons}
+			{toolbarSlots.right ? createPortal(rightExtraButtons, toolbarSlots.right) : rightExtraButtons}
 			<div style={{ width: '100%', height: '100%' }} id={containerId} ref={setEditorContainer}/>
 		</div>
 	);

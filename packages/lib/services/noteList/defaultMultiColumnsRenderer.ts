@@ -32,7 +32,7 @@ const renderer: ListRenderer = {
 		& {
 			display: block;
 			box-sizing: border-box;
-			padding: 1.5px 8px;
+			padding: 1.5px 0;
 		}
 
 		> .row {

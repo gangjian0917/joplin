@@ -11,6 +11,8 @@ _vieux/
 !var/sessions/.gitkeep
 !var/SymfonyRequirements.php
 .DS_Store
+/Joplin.app/
+/Joplin-*-arm64.dmg
 *.map
 *.pro.user
 *.sublime-workspace
@@ -262,7 +264,9 @@ packages/app-desktop/gui/MultiNoteActions.js
 packages/app-desktop/gui/Navigator.js
 packages/app-desktop/gui/NewWindowOrIFrame.js
 packages/app-desktop/gui/NoteContentPropertiesDialog.js
+packages/app-desktop/gui/NoteEditor/EditorToolbarHost.js
 packages/app-desktop/gui/NoteEditor/EditorWindow.js
+packages/app-desktop/gui/NoteEditor/NoteBody/CodeMirror/EditorToolbarPortal.js
 packages/app-desktop/gui/NoteEditor/NoteBody/CodeMirror/Toolbar.js
 packages/app-desktop/gui/NoteEditor/NoteBody/CodeMirror/utils/index.js
 packages/app-desktop/gui/NoteEditor/NoteBody/CodeMirror/utils/normalizeAccelerator.test.js

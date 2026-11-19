@@ -4,7 +4,7 @@ interface ButtonDefinition {
 	name: string;
 	tooltip: string;
 	icon: string;
-	grouped?: boolean;
+	format?: string;
 }
 
 function buttonDefinitions(): ButtonDefinition[] {
@@ -23,19 +23,34 @@ function buttonDefinitions(): ButtonDefinition[] {
 			name: 'joplinInsert',
 			tooltip: _('Insert'),
 			icon: 'underline',
-			grouped: true,
 		},
 		{
 			name: 'joplinSup',
 			tooltip: _('Superscript'),
 			icon: 'superscript',
-			grouped: true,
 		},
 		{
 			name: 'joplinSub',
 			tooltip: _('Subscript'),
 			icon: 'subscript',
-			grouped: true,
+		},
+		{
+			name: 'joplinH1',
+			tooltip: _('Heading 1'),
+			icon: 'h1',
+			format: 'h1',
+		},
+		{
+			name: 'joplinH2',
+			tooltip: _('Heading 2'),
+			icon: 'h2',
+			format: 'h2',
+		},
+		{
+			name: 'joplinH3',
+			tooltip: _('Heading 3'),
+			icon: 'h3',
+			format: 'h3',
 		},
 	];
 }
@@ -45,27 +60,19 @@ export default function(editor: any) {
 	const definitions = buttonDefinitions();
 
 	for (const def of definitions) {
+		const format = def.format || def.name;
 		editor.ui.registry.addToggleButton(def.name, {
 			tooltip: def.tooltip,
 			icon: def.icon,
 			onAction: async function() {
-				editor.execCommand('mceToggleFormat', false, def.name);
+				editor.execCommand('mceToggleFormat', false, format);
 			},
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TinyMCE ToggleButton onSetup api type not in published types
 			onSetup: function(api: any) {
-				editor.formatter.formatChanged(def.name, (state: boolean) => {
+				editor.formatter.formatChanged(format, (state: boolean) => {
 					api.setActive(state);
 				});
 			},
 		});
 	}
-
-	// Old code to format a group of buttons into a dropdown
-	// const items: string[] = definitions.filter(d => !!d.grouped).map(d => d.name);
-	// items.push('forecolor');
-	// editor.ui.registry.addGroupToolbarButton('formattingExtras', {
-	// 	icon: 'image-options',
-	// 	tooltip: _('Formatting'),
-	// 	items: items.join(' '),
-	// });
 }

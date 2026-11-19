@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useEffect, useRef, forwardRef, useCallback, useImperativeHandle, ForwardedRef, useContext } from 'react';
+import { useState, useEffect, useRef, forwardRef, useCallback, useImperativeHandle, ForwardedRef } from 'react';
 
 
 import { EditorCommand, NoteBodyEditorProps, NoteBodyEditorRef } from '../../../utils/types';
@@ -9,7 +9,7 @@ import { CommandValue } from '../../../utils/types';
 import { cursorPositionToTextOffset } from '../utils';
 import useScrollHandler from '../utils/useScrollHandler';
 import useElementSize from '@joplin/lib/hooks/useElementSize';
-import Toolbar from '../Toolbar';
+import EditorToolbarPortal from '../EditorToolbarPortal';
 import { RenderedBody, defaultRenderedBody } from '../utils/types';
 import NoteTextViewer from '../../../../NoteTextViewer';
 import Editor from './Editor';
@@ -34,7 +34,6 @@ import useContextMenu from '../utils/useContextMenu';
 import useWebviewIpcMessage from '../utils/useWebviewIpcMessage';
 import useEditorSearchHandler from '../utils/useEditorSearchHandler';
 import { focus } from '@joplin/lib/utils/focusHandler';
-import { WindowIdContext } from '../../../../NewWindowOrIFrame';
 import { MarkupToHtmlOptions } from '../../../../hooks/useMarkupToHtml';
 
 function markupRenderOptions(override: MarkupToHtmlOptions = null): MarkupToHtmlOptions {
@@ -808,14 +807,10 @@ function CodeMirror(props: NoteBodyEditorProps, ref: ForwardedRef<NoteBodyEditor
 		</div>
 	);
 
-	const windowId = useContext(WindowIdContext);
 	return (
 		<ErrorBoundary message="The text editor encountered a fatal error and could not continue. The error might be due to a plugin, so please try to disable some of them and try again.">
 			<div style={styles.root} ref={setEditorRoot}>
-				<div style={styles.rowToolbar}>
-					<Toolbar themeId={props.themeId} windowId={windowId}/>
-					{props.noteToolbar}
-				</div>
+				<EditorToolbarPortal themeId={props.themeId} noteToolbar={props.noteToolbar}/>
 				{editorViewerRow}
 			</div>
 		</ErrorBoundary>

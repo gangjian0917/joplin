@@ -23,6 +23,7 @@ import { AppState } from '../../app.reducer';
 import ToolbarButtonUtils, { ToolbarButtonInfo } from '@joplin/lib/services/commands/ToolbarButtonUtils';
 import { _, _n } from '@joplin/lib/locale';
 import NoteTitleBar from './NoteTitle/NoteTitleBar';
+import { EditorToolbarHostContext, EditorToolbarSlots, emptyEditorToolbarSlots } from './EditorToolbarHost';
 import markupLanguageUtils from '@joplin/lib/utils/markupLanguageUtils';
 import Setting from '@joplin/lib/models/Setting';
 import stateToWhenClauseContext from '../../services/commands/stateToWhenClauseContext';
@@ -347,6 +348,13 @@ function NoteEditorContent(props: NoteEditorProps) {
 	const onTitleChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => onFieldChange('title', event.target.value), [onFieldChange]);
 
 	const containerRef = useRef<HTMLDivElement>(null);
+	const [toolbarSlots, setToolbarSlots] = useState<EditorToolbarSlots>(emptyEditorToolbarSlots);
+	const onToolbarSlots = useCallback((slots: EditorToolbarSlots) => {
+		setToolbarSlots(prev => {
+			if (prev.left === slots.left && prev.center === slots.center && prev.right === slots.right) return prev;
+			return slots;
+		});
+	}, []);
 	useWindowCommandHandler({
 		dispatch: props.dispatch,
 		setShowLocalSearch,
@@ -816,6 +824,7 @@ function NoteEditorContent(props: NoteEditorProps) {
 	}
 
 	return (
+		<EditorToolbarHostContext.Provider value={toolbarSlots}>
 		<div style={styles.root} onDragOver={onDragOver} onDrop={onDrop} ref={containerRef}>
 			<div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 				{renderConvertHtmlToMarkdown()}
@@ -830,6 +839,7 @@ function NoteEditorContent(props: NoteEditorProps) {
 					noteUserUpdatedTime={formNote.user_updated_time}
 					onTitleChange={onTitleChange}
 					disabled={isReadOnly || reloadInProgress}
+					onToolbarSlots={onToolbarSlots}
 				/>
 				{renderSearchInfo()}
 				<div style={{ display: 'flex', flex: 1, paddingLeft: theme.editorPaddingLeft, maxHeight: '100%', minHeight: '0' }}>
@@ -847,6 +857,7 @@ function NoteEditorContent(props: NoteEditorProps) {
 				<WarningBanner bodyEditor={props.bodyEditor}/>
 			</div>
 		</div>
+		</EditorToolbarHostContext.Provider>
 	);
 }
 

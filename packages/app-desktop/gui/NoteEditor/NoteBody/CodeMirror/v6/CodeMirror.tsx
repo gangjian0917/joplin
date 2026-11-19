@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useEffect, useRef, forwardRef, useCallback, useImperativeHandle, ForwardedRef, useContext } from 'react';
+import { useState, useEffect, useRef, forwardRef, useCallback, useImperativeHandle, ForwardedRef } from 'react';
 
 import { RenderResultPluginAsset } from '@joplin/renderer/types';
 import { EditorCommand, MarkupToHtmlOptions, NoteBodyEditorProps, NoteBodyEditorRef, OnChangeEvent } from '../../../utils/types';
@@ -25,11 +25,10 @@ import useEditorCommands from './useEditorCommands';
 import CodeMirrorControl from '@joplin/editor/CodeMirror/CodeMirrorControl';
 import useContextMenu from '../utils/useContextMenu';
 import useWebviewIpcMessage from '../utils/useWebviewIpcMessage';
-import Toolbar from '../Toolbar';
+import EditorToolbarPortal from '../EditorToolbarPortal';
 import useEditorSearchHandler from '../utils/useEditorSearchHandler';
 import CommandService from '@joplin/lib/services/CommandService';
 import useRefocusOnVisiblePaneChange from './utils/useRefocusOnVisiblePaneChange';
-import { WindowIdContext } from '../../../../NewWindowOrIFrame';
 import eventManager, { EventName, ResourceChangeEvent } from '@joplin/lib/eventManager';
 import useSyncEditorValue from './utils/useSyncEditorValue';
 import { getGlobalSettings } from '@joplin/renderer/types';
@@ -421,14 +420,10 @@ const CodeMirror = (props: NoteBodyEditorProps, ref: ForwardedRef<NoteBodyEditor
 		</div>
 	);
 
-	const windowId = useContext(WindowIdContext);
 	return (
 		<ErrorBoundary message="The text editor encountered a fatal error and could not continue. The error might be due to a plugin, so please try to disable some of them and try again.">
 			<div style={styles.root} ref={rootRef}>
-				<div style={styles.rowToolbar}>
-					<Toolbar themeId={props.themeId} windowId={windowId}/>
-					{props.noteToolbar}
-				</div>
+				<EditorToolbarPortal themeId={props.themeId} noteToolbar={props.noteToolbar}/>
 				{editorViewerRow}
 			</div>
 		</ErrorBoundary>

@@ -46,9 +46,10 @@ describe('useItemElement', () => {
 
 		act(() => {});
 
-		const el = result.current.current;
+		const el = result.current.current as HTMLDivElement;
 		expect(el).toBeInstanceOf(HTMLDivElement);
 		expect(rootElement.contains(el)).toBe(true);
+		expect(el.style.height).toBe('24px');
 
 		unmount();
 

@@ -6,6 +6,14 @@ import { ItemEventHandlers } from './types';
 import attachNoteTitleTooltip from './noteTitleTooltip';
 import { getCachedNoteHtml, setCachedNoteHtml } from './noteHtmlCache';
 
+const applyItemLayout = (element: HTMLDivElement, style: React.CSSProperties, itemSize: Size, flow: ItemFlow) => {
+	for (const [n, v] of Object.entries(style)) {
+		(element.style as unknown as Record<string, unknown>)[n] = v;
+	}
+	if (flow === ItemFlow.LeftToRight) element.style.width = `${itemSize.width}px`;
+	element.style.height = `${itemSize.height}px`;
+};
+
 const addItemEventListeners = (
 	element: HTMLElement,
 	listeners: ItemEventHandlers,
@@ -56,6 +64,8 @@ const useItemElement = (
 	rootElement: HTMLDivElement | null, noteId: string, noteHtml: string, placeholderHtml: string, focusVisible: boolean, style: React.CSSProperties, itemSize: Size, onClick: React.MouseEventHandler<HTMLDivElement>, onDoubleClick: React.MouseEventHandler<HTMLDivElement>, flow: ItemFlow, itemEventHandlers: ItemEventHandlers, displayTitle = '',
 ) => {
 	const itemElement = useRef<HTMLDivElement>(null);
+	const layoutRef = useRef({ style, itemSize, flow });
+	layoutRef.current = { style, itemSize, flow };
 
 	// Effects are split so that re-creating the element (and re-writing
 	// innerHTML) only happens when the rendered note HTML actually changes.
@@ -83,6 +93,7 @@ const useItemElement = (
 		// the async render pipeline completed, which made fast scrolling flash
 		// blank rows.
 		element.innerHTML = mountContentRef.current.noteHtml ?? getCachedNoteHtml(noteId) ?? mountContentRef.current.placeholderHtml;
+		applyItemLayout(element, layoutRef.current.style, layoutRef.current.itemSize, layoutRef.current.flow);
 
 		rootElement.appendChild(element);
 		itemElement.current = element;
@@ -98,12 +109,10 @@ const useItemElement = (
 	useEffect(() => {
 		const element = itemElement.current;
 		if (!element) return;
-		for (const [n, v] of Object.entries(style)) {
-			(element.style as unknown as Record<string, unknown>)[n] = v;
-		}
-		if (flow === ItemFlow.LeftToRight) element.style.width = `${itemSize.width}px`;
-		element.style.height = `${itemSize.height}px`;
-	}, [style, itemSize, flow]);
+		applyItemLayout(element, style, itemSize, flow);
+		// rootElement/noteId: the node is created in an earlier effect. Without
+		// these deps the height stays unset until a later resize recreates itemSize.
+	}, [style, itemSize, flow, rootElement, noteId]);
 
 	useEffect(() => {
 		if (!noteHtml) return;

@@ -9,7 +9,8 @@
 
 	> .notes {
 		display: flex;
-		overflow-x: hidden;
+		overflow-x: visible;
+		width: calc(100% + var(--scrollbar-size, 8px));
 	}
 
 	> .emptylist {

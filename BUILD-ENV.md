@@ -12,7 +12,7 @@
 | 目标架构 | arm64，对应 Apple M2。Electron、Node 原生模块都按 arm64 安装和打包 |
 | 默认产物 | `Joplin.app` 与 `Joplin-<version>-arm64.dmg`，只含 `mac-arm64` |
 | 界面 | 字体和视觉按 macOS 15 系统样式对齐：`-apple-system` / 苹方、`ui-monospace` / SF Mono，界面 13px、正文 16px、标题 22px、次要文字 11px |
-| 编译入口 | `/Users/meizu/github/build-joplin.sh`，固定执行 `yarn dist --mac --arm64` |
+| 编译入口 | 仓库根目录 `build-joplin.sh`，固定执行 `yarn dist --mac --arm64` |
 
 `packages/app-desktop/package.json` 的 macOS 目标是 arm64 的 dmg 和 zip。编译脚本在打包前会再确认一次，结束后还原该文件。
 
@@ -66,18 +66,18 @@ yarn --version
 本机目录约定：
 
 ```text
-/Users/meizu/github/joplin          源码
-/Users/meizu/github/build-joplin.sh 转到仓库里的脚本
-/Users/meizu/github/Joplin.app      编译结果
+/Users/meizu/github/joplin                         源码和编译脚本
+/Users/meizu/github/joplin/Joplin.app              编译结果
+/Users/meizu/github/joplin/Joplin-<version>-arm64.dmg
 ```
 
 执行：
 
 ```bash
-/Users/meizu/github/build-joplin.sh
+/Users/meizu/github/joplin/build-joplin.sh
 ```
 
-脚本把 `Joplin.app` 放到源码目录的上一级，并在同一位置复制 `Joplin-<version>-arm64.dmg`。
+脚本把 `Joplin.app` 和 `Joplin-<version>-arm64.dmg` 写到仓库根目录，并覆盖上一次的同名产物。
 
 开发版不打包，在 `packages/app-desktop` 里执行 `yarn start`。
 
@@ -88,7 +88,7 @@ yarn --version
 未签名的包第一次打开前执行：
 
 ```bash
-xattr -cr /Users/meizu/github/Joplin.app
+xattr -cr /Users/meizu/github/joplin/Joplin.app
 ```
 
 若系统仍拦截，到「系统设置 → 隐私与安全性」里允许打开。

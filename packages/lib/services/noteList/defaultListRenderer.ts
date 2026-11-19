@@ -61,7 +61,7 @@ const renderer: ListRenderer = {
 		`
 		& {
 			box-sizing: border-box;
-			padding: 1.5px 8px;
+			padding: 1.5px 0;
 		}
 
 		> .content.-selected {

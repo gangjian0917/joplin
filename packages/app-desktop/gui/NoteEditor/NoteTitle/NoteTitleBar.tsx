@@ -8,6 +8,7 @@ import shim from '@joplin/lib/shim';
 import { buildStyle } from '@joplin/lib/theme';
 import time from '@joplin/lib/time';
 import { WindowIdContext } from '../../NewWindowOrIFrame';
+import { EditorToolbarSlots } from '../EditorToolbarHost';
 
 interface Props {
 	themeId: number;
@@ -18,6 +19,7 @@ interface Props {
 	titleInputRef: React.RefObject<HTMLInputElement>;
 	onTitleChange(event: ChangeEvent<HTMLInputElement>): void;
 	disabled: boolean;
+	onToolbarSlots(slots: EditorToolbarSlots): void;
 }
 
 function styles_(props: Props) {
@@ -111,6 +113,18 @@ export default function NoteTitleBar(props: Props) {
 	}
 
 	const windowId = useContext(WindowIdContext);
+	const slotsRef = useRef<EditorToolbarSlots>({ left: null, center: null, right: null });
+	const onToolbarSlotsRef = useRef(props.onToolbarSlots);
+	onToolbarSlotsRef.current = props.onToolbarSlots;
+
+	const publishSlot = useCallback((key: keyof EditorToolbarSlots, node: HTMLDivElement | null) => {
+		if (slotsRef.current[key] === node) return;
+		slotsRef.current = { ...slotsRef.current, [key]: node };
+		onToolbarSlotsRef.current({ ...slotsRef.current });
+	}, []);
+	const setLeftSlot = useCallback((node: HTMLDivElement | null) => publishSlot('left', node), [publishSlot]);
+	const setCenterSlot = useCallback((node: HTMLDivElement | null) => publishSlot('center', node), [publishSlot]);
+	const setRightSlot = useCallback((node: HTMLDivElement | null) => publishSlot('right', node), [publishSlot]);
 
 	function renderNoteToolbar() {
 		return <NoteToolbar
@@ -123,23 +137,32 @@ export default function NoteTitleBar(props: Props) {
 
 	return (
 		<div className='note-title-wrapper'>
-			<input
-				className="title-input"
-				type="text"
-				ref={props.titleInputRef}
-				placeholder={props.isProvisional ? (props.noteIsTodo ? _('Creating new to-do...') : _('Creating new note...')) : ''}
-				aria-label={props.isProvisional ? undefined : _('Note title')}
-				style={styles.titleInput}
-				readOnly={props.disabled}
-				onChange={props.onTitleChange}
-				onKeyDown={onTitleKeydown}
-				onFocus={onTitleFocus}
-				onBlur={onTitleBlur}
-				value={props.noteTitle}
-			/>
-			<div className='note-title-info-group'>
-				{renderTitleBarDate()}
-				{renderNoteToolbar()}
+			<div className='note-title-top-row'>
+				<div className='note-editor-toolbar-host'>
+					<div className='note-editor-toolbar-slot-left' ref={setLeftSlot}/>
+					<div className='note-editor-toolbar-slot-center' ref={setCenterSlot}/>
+					<div className='note-editor-toolbar-slot-right' ref={setRightSlot}/>
+				</div>
+				<div className='note-title-info-group'>
+					{renderTitleBarDate()}
+					{renderNoteToolbar()}
+				</div>
+			</div>
+			<div className='note-title-input-row'>
+				<input
+					className="title-input"
+					type="text"
+					ref={props.titleInputRef}
+					placeholder={props.isProvisional ? (props.noteIsTodo ? _('Creating new to-do...') : _('Creating new note...')) : ''}
+					aria-label={props.isProvisional ? undefined : _('Note title')}
+					style={styles.titleInput}
+					readOnly={props.disabled}
+					onChange={props.onTitleChange}
+					onKeyDown={onTitleKeydown}
+					onFocus={onTitleFocus}
+					onBlur={onTitleBlur}
+					value={props.noteTitle}
+				/>
 			</div>
 		</div>
 	);

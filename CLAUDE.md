@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | 任务 | 命令 |
 | --- | --- |
-| 打 arm64 安装包 | 仓库根目录 `bash build-joplin.sh`，产物 `Joplin.app` 和 dmg 放到源码目录**上一级** |
+| 打 arm64 安装包 | 仓库根目录 `bash build-joplin.sh`，产物 `Joplin.app` 和 dmg 覆盖写到仓库根目录 |
 | 开发运行桌面端 | `cd packages/app-desktop && yarn start` |
 | 持续编译 TS | 根目录 `yarn watch`（一次性编译用 `yarn tsc`） |
 | 只做类型检查 | 在具体包里 `yarn tsc --noEmit` |

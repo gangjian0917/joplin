@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 # Build the Joplin desktop app for this Apple Silicon Mac.
-# The .app is written to the parent of this repository.
+# The .app and dmg are written into this directory, replacing the previous build.
 set -euo pipefail
 
 SRC="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$(cd "$SRC/.." && pwd)"
 DESKTOP="$SRC/packages/app-desktop"
 PKG="$DESKTOP/package.json"
-OUT_APP="$ROOT/Joplin.app"
+OUT_APP="$SRC/Joplin.app"
 
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
 export CSC_IDENTITY_AUTO_DISCOVERY=false
@@ -66,10 +65,11 @@ rm -rf "$OUT_APP"
 ditto "$APP_SRC" "$OUT_APP"
 xattr -cr "$OUT_APP"
 
+find "$SRC" -maxdepth 1 -name 'Joplin-*-arm64.dmg' -delete
 DMG_SRC="$(find "$DESKTOP/dist" -maxdepth 1 -name 'Joplin-*-arm64.dmg' -print 2>/dev/null | xargs ls -t 2>/dev/null | head -n 1)"
 if [[ -n "$DMG_SRC" ]]; then
-	cp -f "$DMG_SRC" "$ROOT/$(basename "$DMG_SRC")"
-	echo "DMG: $ROOT/$(basename "$DMG_SRC")"
+	cp -f "$DMG_SRC" "$SRC/$(basename "$DMG_SRC")"
+	echo "DMG: $SRC/$(basename "$DMG_SRC")"
 fi
 
 echo "APP: $OUT_APP"

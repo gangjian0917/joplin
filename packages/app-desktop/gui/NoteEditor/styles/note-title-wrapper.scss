@@ -1,17 +1,107 @@
-
 .note-title-wrapper {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	box-sizing: border-box;
+	min-width: 0;
+}
+
+.note-title-top-row {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
-	min-height: 44px;
+	min-height: 40px;
 	box-sizing: border-box;
-	padding: 6px 12px 6px var(--joplin-editor-padding-left);
-	gap: 10px;
+	background-color: var(--joplin-background-color3);
+	border-bottom: 1px solid var(--joplin-divider-color);
+	padding-right: 6px;
+	gap: 4px;
+	min-width: 0;
+}
 
-	@media (max-width: 800px) {
-		flex-direction: column;
-		align-items: flex-start;
-	}
+.note-editor-toolbar-host {
+	// Basis 0 so the host takes the free space in the title row. A content-sized
+	// basis lets the rich-text toolbar shrink to its widest button group and wrap
+	// each group onto its own line.
+	flex: 1 1 0;
+	min-width: 0;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+
+.note-editor-toolbar-slot-left,
+.note-editor-toolbar-slot-right {
+	display: flex;
+	flex: none;
+	align-items: center;
+}
+
+.note-editor-toolbar-slot-center {
+	flex: 1 1 0;
+	min-width: 0;
+	display: flex;
+	align-items: center;
+	overflow: hidden;
+}
+
+.note-editor-toolbar-slot-center > .tox-editor-header,
+.note-editor-toolbar-portaled {
+	flex: 1 1 0;
+	min-width: 0;
+	width: 100%;
+	max-width: 100%;
+	margin: 0;
+	border: none;
+	box-shadow: none;
+	background: transparent;
+	overflow: hidden;
+}
+
+// TinyMCE's header is a grid whose 1fr column will not shrink below the widest
+// group, and its toolbar wraps. Pin both to the slot width and keep one row.
+.note-title-top-row .note-editor-toolbar-slot-center > .tox-editor-header {
+	display: block;
+	padding: 0;
+	margin: 0;
+	border: none;
+	box-shadow: none;
+	background: transparent;
+}
+
+.note-title-top-row .note-editor-toolbar-slot-center > .tox-editor-header .tox-toolbar,
+.note-title-top-row .note-editor-toolbar-slot-center > .tox-editor-header .tox-toolbar__primary {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	align-items: center;
+	flex: 1 1 auto;
+	flex-shrink: 1;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	overflow-x: auto;
+	overflow-y: hidden;
+	background-image: none;
+}
+
+.note-title-top-row .note-editor-toolbar-slot-center > .tox-editor-header .tox-toolbar__group {
+	flex-wrap: nowrap;
+	flex-shrink: 0;
+}
+
+.note-title-input-row {
+	display: flex;
+	align-items: center;
+	box-sizing: border-box;
+	padding: 2px 12px 4px var(--joplin-editor-padding-left);
+	min-width: 0;
+}
+
+.note-title-top-row .note-title-info-group {
+	border-top: none;
+	width: auto;
+	flex: none;
 }
 
 html.mac-hidden-titlebar .note-title-wrapper {

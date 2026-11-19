@@ -72,15 +72,15 @@ macOS 产物是 arm64 的 dmg 和 zip。本机没有 Apple 签名身份，打出
 编译：
 
 ```bash
-/Users/meizu/github/build-joplin.sh
+/Users/meizu/github/joplin/build-joplin.sh
 ```
 
-脚本在仓库里，上一级目录有一个同名入口。它会安装缺失依赖、按 arm64 打包、关闭签名，并把结果放到源码目录的上一级：
+脚本会安装缺失依赖、按 arm64 打包、关闭签名，并把结果覆盖写到仓库根目录：
 
 ```text
-/Users/meizu/github/joplin                      源码
-/Users/meizu/github/Joplin.app                  应用
-/Users/meizu/github/Joplin-<version>-arm64.dmg  安装镜像
+/Users/meizu/github/joplin                         源码和编译脚本
+/Users/meizu/github/joplin/Joplin.app              应用
+/Users/meizu/github/joplin/Joplin-<version>-arm64.dmg  安装镜像
 ```
 
 开发时不打包，在 `packages/app-desktop` 里执行 `yarn start`。
@@ -88,5 +88,5 @@ macOS 产物是 arm64 的 dmg 和 zip。本机没有 Apple 签名身份，打出
 未签名的包第一次打开前执行：
 
 ```bash
-xattr -cr /Users/meizu/github/Joplin.app
+xattr -cr /Users/meizu/github/joplin/Joplin.app
 ```

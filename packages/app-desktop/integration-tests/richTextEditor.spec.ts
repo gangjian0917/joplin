@@ -79,6 +79,49 @@ test.describe('richTextEditor', () => {
 		expect(finalCodeMirrorContent).toContain(`:/${resourceId}`);
 	});
 
+	test('toolbar formatting and overflow menu should work', async ({ electronApp, mainWindow }) => {
+		const mainScreen = new MainScreen(mainWindow);
+		await mainScreen.waitFor();
+		const newFolderButton = mainScreen.sidebar.container.getByRole('button', { name: 'New' });
+		await newFolderButton.press('Enter');
+		await mainScreen.dialog.getByLabel('Title').fill('Test');
+		await mainScreen.dialog.getByRole('button', { name: 'OK' }).click();
+		await mainScreen.createNewNote('Toolbar formatting');
+
+		const editor = mainScreen.noteEditor;
+		const richTextEditor = await editor.showRichTextEditor();
+		await richTextEditor.typeText('Format this text');
+		await richTextEditor.body.getByText('Format this text').selectText();
+		await editor.toolbarButtonLocator('Bold').click();
+
+		await expect(richTextEditor.body.locator('strong')).toHaveText('Format this text');
+		await richTextEditor.body.getByText('Format this text').selectText();
+		await editor.toolbarButtonLocator('Highlight').click();
+		await expect(richTextEditor.body.locator('mark')).toHaveText('Format this text');
+
+		await electronApp.evaluate(({ BrowserWindow }) => {
+			BrowserWindow.getAllWindows()[0].setSize(900, 800);
+		});
+		await expect(mainWindow.locator('.note-title-top-row .note-updated-time')).toHaveCount(0);
+		await expect(mainWindow.locator('.editor-status-bar .note-updated-time')).toBeVisible();
+		const toolbarBounds = await mainWindow.locator('.tox-editor-header.-note-title-toolbar').boundingBox();
+		const toolbarHostBounds = await mainWindow.locator('.note-editor-toolbar-host').boundingBox();
+		if (!toolbarBounds || !toolbarHostBounds) throw new Error('Expected title toolbar and host to have bounding boxes');
+		expect(toolbarBounds.y + toolbarBounds.height).toBeLessThan(toolbarHostBounds.y + toolbarHostBounds.height);
+		await expect(mainWindow.locator('.tox-editor-header.-note-title-toolbar')).toHaveCSS('-webkit-app-region', 'no-drag');
+
+		const moreButton = mainWindow.getByRole('button', { name: 'Reveal or hide additional toolbar items' });
+		await expect(moreButton).toBeVisible();
+		await moreButton.click();
+		const insertTimeButton = mainWindow.getByRole('button', { name: 'Insert time' });
+		await expect(insertTimeButton).toBeVisible();
+		await expect(insertTimeButton).toHaveCSS('-webkit-app-region', 'no-drag');
+		const moreButtonBounds = await moreButton.boundingBox();
+		const insertTimeButtonBounds = await insertTimeButton.boundingBox();
+		if (!moreButtonBounds || !insertTimeButtonBounds) throw new Error('Expected toolbar buttons to have bounding boxes');
+		expect(insertTimeButtonBounds.y).toBeGreaterThan(moreButtonBounds.y + moreButtonBounds.height);
+	});
+
 	test('should watch resources for changes when opened with ctrl+click', async ({ electronApp, mainWindow }) => {
 		const mainScreen = await new MainScreen(mainWindow).setup();
 		await mainScreen.createNewNote('Testing!');
@@ -222,6 +265,9 @@ test.describe('richTextEditor', () => {
 		// Make the code block
 		await editor.toggleCodeBlockButton.click();
 		const codeEditor = richTextEditor.codeEditor;
+		await codeEditor.languageSelector.click();
+		await expect(mainWindow.getByRole('option', { name: 'javascript', exact: true })).toBeVisible();
+		await mainWindow.keyboard.press('Escape');
 		await codeEditor.textArea.fill('This is a test code block!');
 		await codeEditor.submit();
 

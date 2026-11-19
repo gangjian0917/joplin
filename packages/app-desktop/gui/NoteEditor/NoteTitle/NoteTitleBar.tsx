@@ -6,13 +6,11 @@ import NoteToolbar from '../../NoteToolbar/NoteToolbar';
 import { macosNoteTitleFontSize } from '@joplin/lib/themes/macos';
 import shim from '@joplin/lib/shim';
 import { buildStyle } from '@joplin/lib/theme';
-import time from '@joplin/lib/time';
 import { WindowIdContext } from '../../NewWindowOrIFrame';
 import { EditorToolbarSlots } from '../EditorToolbarHost';
 
 interface Props {
 	themeId: number;
-	noteUserUpdatedTime: number;
 	noteTitle: string;
 	noteIsTodo: number;
 	isProvisional: boolean;
@@ -44,15 +42,6 @@ function styles_(props: Props) {
 				width: '100%',
 			},
 
-			titleDate: {
-				...theme.textStyle,
-				fontSize: shim.isMac() ? 12 : theme.textStyle.fontSize,
-				fontVariantNumeric: 'tabular-nums',
-				color: theme.colorFaded,
-				paddingLeft: 4,
-				paddingRight: 4,
-				whiteSpace: 'nowrap',
-			},
 			toolbarStyle: {
 				marginBottom: 0,
 				minWidth: 0,
@@ -108,10 +97,6 @@ export default function NoteTitleBar(props: Props) {
 
 	const { onTitleFocus, onTitleBlur } = useReselectHandlers();
 
-	function renderTitleBarDate() {
-		return <span className="updated-time-label" style={styles.titleDate}>{time.formatMsToLocal(props.noteUserUpdatedTime)}</span>;
-	}
-
 	const windowId = useContext(WindowIdContext);
 	const slotsRef = useRef<EditorToolbarSlots>({ left: null, center: null, right: null });
 	const onToolbarSlotsRef = useRef(props.onToolbarSlots);
@@ -144,7 +129,6 @@ export default function NoteTitleBar(props: Props) {
 					<div className='note-editor-toolbar-slot-right' ref={setRightSlot}/>
 				</div>
 				<div className='note-title-info-group'>
-					{renderTitleBarDate()}
 					{renderNoteToolbar()}
 				</div>
 			</div>

@@ -6,6 +6,7 @@ import { _ } from '@joplin/lib/locale';
 import enableTextAreaTab, { TextAreaTabHandler } from './enableTextAreaTab';
 import { MarkupToHtml } from '@joplin/renderer';
 import { getGlobalSettings } from '@joplin/renderer/types';
+import hljs from '@joplin/renderer/highlight';
 import Setting from '@joplin/lib/models/Setting';
 
 interface Props {
@@ -88,6 +89,12 @@ function openEditDialog(
 	editable: Element,
 ) {
 	const source = editable ? findBlockSource(editable) : newBlockSource();
+	const languages = Array.from(new Set([
+		...hljs.listLanguages(),
+		'frontmatter',
+		'katex',
+		source.language,
+	])).filter(Boolean).sort();
 	let tabHandler: TextAreaTabHandler|null = null;
 
 	editor.windowManager.open({
@@ -124,9 +131,13 @@ function openEditDialog(
 			type: 'panel',
 			items: [
 				{
-					type: 'input',
+					type: 'selectbox',
 					name: 'languageInput',
 					label: 'Language',
+					items: [
+						{ text: _('Plain text'), value: '' },
+						...languages.map(language => ({ text: language, value: language })),
+					],
 					// Katex is a special case with special opening/closing tags
 					// and we don't currently handle switching the language in this case.
 					enabled: source.language !== 'katex',

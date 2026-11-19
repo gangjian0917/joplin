@@ -3,11 +3,13 @@ import { Locator, Page } from '@playwright/test';
 export default class EditorCodeDialog {
 	private readonly dialog: Locator;
 	public readonly textArea: Locator;
+	public readonly languageSelector: Locator;
 	public readonly okButton: Locator;
 
 	public constructor(page: Page) {
 		this.dialog = page.getByRole('dialog', { name: 'Edit' });
 		this.textArea = this.dialog.locator('textarea');
+		this.languageSelector = this.dialog.getByLabel('Language');
 		this.okButton = this.dialog.getByRole('button', { name: 'OK' });
 	}
 

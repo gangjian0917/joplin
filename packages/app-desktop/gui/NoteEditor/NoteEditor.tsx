@@ -825,38 +825,38 @@ function NoteEditorContent(props: NoteEditorProps) {
 
 	return (
 		<EditorToolbarHostContext.Provider value={toolbarSlots}>
-		<div style={styles.root} onDragOver={onDragOver} onDrop={onDrop} ref={containerRef}>
-			<div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-				{renderConvertHtmlToMarkdown()}
-				{renderResourceWatchingNotification()}
-				{renderResourceInSearchResultsNotification()}
-				<NoteTitleBar
-					titleInputRef={titleInputRef}
-					themeId={props.themeId}
-					isProvisional={props.isProvisional}
-					noteIsTodo={formNote.is_todo}
-					noteTitle={formNote.title}
-					noteUserUpdatedTime={formNote.user_updated_time}
-					onTitleChange={onTitleChange}
-					disabled={isReadOnly || reloadInProgress}
-					onToolbarSlots={onToolbarSlots}
-				/>
-				{renderSearchInfo()}
-				<div style={{ display: 'flex', flex: 1, paddingLeft: theme.editorPaddingLeft, maxHeight: '100%', minHeight: '0' }}>
-					{editor}
-					{renderPluginEditor()}
+			<div style={styles.root} onDragOver={onDragOver} onDrop={onDrop} ref={containerRef}>
+				<div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+					{renderConvertHtmlToMarkdown()}
+					{renderResourceWatchingNotification()}
+					{renderResourceInSearchResultsNotification()}
+					<NoteTitleBar
+						titleInputRef={titleInputRef}
+						themeId={props.themeId}
+						isProvisional={props.isProvisional}
+						noteIsTodo={formNote.is_todo}
+						noteTitle={formNote.title}
+						onTitleChange={onTitleChange}
+						disabled={isReadOnly || reloadInProgress}
+						onToolbarSlots={onToolbarSlots}
+					/>
+					{renderSearchInfo()}
+					<div style={{ display: 'flex', flex: 1, paddingLeft: theme.editorPaddingLeft, maxHeight: '100%', minHeight: '0' }}>
+						{editor}
+						{renderPluginEditor()}
+					</div>
+					<div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+						{renderSearchBar()}
+					</div>
+					<StatusBar
+						noteId={formNote.id}
+						noteUserUpdatedTime={formNote.user_updated_time}
+						setTagsToolbarButtonInfo={props.setTagsToolbarButtonInfo}
+						selectedNoteTags={props.selectedNoteTags}
+					/>
+					<WarningBanner bodyEditor={props.bodyEditor}/>
 				</div>
-				<div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-					{renderSearchBar()}
-				</div>
-				<StatusBar
-					noteId={formNote.id}
-					setTagsToolbarButtonInfo={props.setTagsToolbarButtonInfo}
-					selectedNoteTags={props.selectedNoteTags}
-				/>
-				<WarningBanner bodyEditor={props.bodyEditor}/>
 			</div>
-		</div>
 		</EditorToolbarHostContext.Provider>
 	);
 }

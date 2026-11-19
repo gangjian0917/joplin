@@ -15,4 +15,12 @@
 	> .status {
 		align-self: center;
 	}
+
+	> .note-updated-time {
+		margin-left: 12px;
+		color: var(--joplin-color-faded);
+		font-size: 12px;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
 }

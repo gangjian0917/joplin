@@ -20,9 +20,7 @@
 }
 
 .note-editor-toolbar-host {
-	// Basis 0 so the host takes the free space in the title row. A content-sized
-	// basis lets the rich-text toolbar shrink to its widest button group and wrap
-	// each group onto its own line.
+	// Basis 0 keeps the toolbar constrained to the free space in the title row.
 	flex: 1 1 0;
 	min-width: 0;
 	display: flex;
@@ -58,9 +56,9 @@
 	overflow: hidden;
 }
 
-// TinyMCE's header is a grid whose 1fr column will not shrink below the widest
-// group, and its toolbar wraps. Pin both to the slot width and keep one row.
-.note-title-top-row .note-editor-toolbar-slot-center > .tox-editor-header {
+// Pin TinyMCE's header and toolbar to the slot width so its overflow menu can take over.
+.note-title-top-row .note-editor-toolbar-slot-center > .tox-editor-header,
+.tox-editor-header.-note-title-toolbar {
 	display: block;
 	padding: 0;
 	margin: 0;
@@ -69,8 +67,14 @@
 	background: transparent;
 }
 
+.tox-editor-header.-note-title-toolbar {
+	background: transparent !important;
+}
+
 .note-title-top-row .note-editor-toolbar-slot-center > .tox-editor-header .tox-toolbar,
-.note-title-top-row .note-editor-toolbar-slot-center > .tox-editor-header .tox-toolbar__primary {
+.note-title-top-row .note-editor-toolbar-slot-center > .tox-editor-header .tox-toolbar__primary,
+.tox-editor-header.-note-title-toolbar .tox-toolbar,
+.tox-editor-header.-note-title-toolbar .tox-toolbar__primary {
 	display: flex;
 	flex-direction: row;
 	flex-wrap: nowrap;
@@ -80,12 +84,13 @@
 	width: 100%;
 	max-width: 100%;
 	min-width: 0;
-	overflow-x: auto;
+	overflow-x: hidden;
 	overflow-y: hidden;
 	background-image: none;
 }
 
-.note-title-top-row .note-editor-toolbar-slot-center > .tox-editor-header .tox-toolbar__group {
+.note-title-top-row .note-editor-toolbar-slot-center > .tox-editor-header .tox-toolbar__group,
+.tox-editor-header.-note-title-toolbar .tox-toolbar__group {
 	flex-wrap: nowrap;
 	flex-shrink: 0;
 }
@@ -113,6 +118,13 @@ html.mac-hidden-titlebar .note-title-wrapper {
 	[role="button"] {
 		-webkit-app-region: no-drag;
 	}
+}
+
+html.mac-hidden-titlebar .tox-editor-header.-note-title-toolbar,
+html.mac-hidden-titlebar .tox-editor-header.-note-title-toolbar *,
+html.mac-hidden-titlebar .tox-tinymce-aux .tox-toolbar__overflow,
+html.mac-hidden-titlebar .tox-tinymce-aux .tox-toolbar__overflow * {
+	-webkit-app-region: no-drag;
 }
 
 html.mac-hidden-titlebar:not(.is-fullscreen) .note-editor-wrapper.is-leftmost-pane .note-title-wrapper {

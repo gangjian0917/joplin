@@ -424,6 +424,9 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 		const isDark = theme.appearance === ThemeAppearance.Dark;
 		const accentColor = isDark ? '#0a84ff' : '#007aff';
 		const activePillBg = isDark ? 'rgba(10, 132, 255, 0.22)' : 'rgba(0, 122, 255, 0.13)';
+		const toolbarControlSize = Math.round(theme.toolbarHeight * 0.86);
+		const toolbarIconSize = Math.min(theme.toolbarIconSize, 16);
+		const toolbarVerticalPadding = Math.round(theme.toolbarPadding * 0.65);
 
 		const element = editorContainerDom.createElement('style');
 		element.setAttribute('id', 'tinyMceStyle');
@@ -432,11 +435,6 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 			.joplin-tinymce .tox-tinymce {
 				background-color: ${theme.backgroundColor3} !important;
 			}
-
-			.joplin-tinymce .tox-editor-header.tox-editor-header {
-				display: none !important;
-			}
-
 			.joplin-tinymce .tox-editor-container,
 			.joplin-tinymce .tox-sidebar-wrap,
 			.joplin-tinymce .tox-edit-area,
@@ -599,12 +597,12 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 			}
 
 			.tox .tox-tbtn {
-				height: ${theme.toolbarHeight}px;
-				min-height: ${theme.toolbarHeight}px;
-				max-height: ${theme.toolbarHeight}px;
-				width: ${theme.toolbarHeight}px;
-				min-width: ${theme.toolbarHeight}px;
-				border-radius: 6px !important;
+				height: ${toolbarControlSize}px;
+				min-height: ${toolbarControlSize}px;
+				max-height: ${toolbarControlSize}px;
+				width: ${toolbarControlSize}px;
+				min-width: ${toolbarControlSize}px;
+				border-radius: 5px !important;
 				transition: background-color 0.12s ease, color 0.12s ease;
 			}
 
@@ -621,8 +619,8 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 			/* Subtle dividers and spacing between toolbar groups */
 			.tox .tox-toolbar__group {
 				position: relative;
-				padding-left: 5px;
-				padding-right: 5px;
+				padding-left: 4px;
+				padding-right: 4px;
 			}
 
 			.tox .tox-toolbar__group:not(:last-of-type)::after {
@@ -632,7 +630,7 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 				top: 50%;
 				transform: translateY(-50%);
 				width: 1px;
-				height: 15px;
+				height: 13px;
 				background-color: ${theme.dividerColor};
 			}
 
@@ -652,7 +650,7 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 			   they are overridden by TinyMCE. */
 			.plugin-icon.fa, .plugin-icon.far, .plugin-icon.fas {
 				font-family: "Font Awesome 5 Free";
-				font-size: ${theme.toolbarHeight - theme.toolbarPadding}px;
+				font-size: ${toolbarIconSize}px;
 			}
 			
 			.plugin-icon.fa, .plugin-icon.fas {
@@ -666,8 +664,8 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 
 			.joplin-tinymce .tox-toolbar__group {
 				background-color: ${theme.backgroundColor3};
-				padding-top: ${theme.toolbarPadding}px;
-				padding-bottom: ${theme.toolbarPadding}px;
+				padding-top: ${toolbarVerticalPadding}px;
+				padding-bottom: ${toolbarVerticalPadding}px;
 			}
 
 			.joplin-tinymce .tox .tox-edit-area__iframe {
@@ -723,8 +721,8 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 			}
 
 			.tox .tox-tbtn .tox-icon svg {
-				width: 18px !important;
-				height: 18px !important;
+				width: ${toolbarIconSize}px !important;
+				height: ${toolbarIconSize}px !important;
 				display: block !important;
 				fill: none !important;
 				stroke: currentColor !important;
@@ -742,15 +740,15 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 
 			.tox .tox-tbtn[aria-haspopup=true] {
 				width: auto !important;
-				min-width: ${theme.toolbarHeight}px;
+				min-width: ${toolbarControlSize}px;
 				max-width: none !important;
 				padding: 0 2px !important;
 			}
 
 			.tox .tox-tbtn__select-chevron,
 			.tox .tox-split-button__chevron {
-				width: 12px !important;
-				min-width: 12px !important;
+				width: 10px !important;
+				min-width: 10px !important;
 				flex: none !important;
 				display: flex !important;
 				align-items: center !important;
@@ -759,25 +757,25 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 
 			.tox .tox-tbtn__select-chevron svg,
 			.tox .tox-split-button__chevron svg {
-				width: 12px !important;
-				height: 12px !important;
+				width: 10px !important;
+				height: 10px !important;
 				display: block !important;
 				fill: currentColor !important;
 				stroke: none !important;
 			}
 
 			.tox .tox-split-button {
-				height: ${theme.toolbarHeight}px !important;
-				max-height: ${theme.toolbarHeight}px !important;
+				height: ${toolbarControlSize}px !important;
+				max-height: ${toolbarControlSize}px !important;
 				width: auto !important;
 				overflow: hidden !important;
 				border-radius: 6px !important;
 			}
 
 			.tox .tox-split-button .tox-tbtn {
-				width: 22px !important;
-				min-width: 22px !important;
-				max-width: 22px !important;
+				width: ${toolbarControlSize - 4}px !important;
+				min-width: ${toolbarControlSize - 4}px !important;
+				max-width: ${toolbarControlSize - 4}px !important;
 				margin: 0 !important;
 			}
 
@@ -890,9 +888,8 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 				relative_urls: false,
 				branding: false,
 				statusbar: false,
-				// Keep every formatting control on one row. The default "floating"
-				// mode measures a content-sized header and wraps each group.
-				toolbar_mode: 'scrolling',
+				// Keep controls on one row and move those that do not fit into the overflow menu.
+				toolbar_mode: 'floating',
 				link_target_list: false,
 				// Handle the first table row as table header.
 				// https://www.tiny.cloud/docs/plugins/table/#table_header_type
@@ -1763,29 +1760,44 @@ const TinyMCE = (props: NoteBodyEditorProps, ref: Ref<NoteBodyEditorRef>) => {
 		// eslint-disable-next-line @seiyab/react-hooks/exhaustive-deps -- Old code before rule was applied
 	}, [props.onWillChange, props.onChange, props.contentMarkupLanguage, props.contentOriginalCss, editor]);
 
-	// The formatting toolbar is rendered into the note title row. TinyMCE builds it inside
-	// the editor, so move the header node after init. Cleanup puts it back when the slot
-	// changes; if the editor is already gone, drop the detached node.
+	// Keep the toolbar in TinyMCE's DOM tree so its event handlers continue to work.
+	// Position it over the title-row slot instead of moving it out of the editor.
 	useEffect(() => {
 		const center = toolbarSlots.center;
 		if (!editor || !editorReady || !center) return undefined;
 
 		const container = editor.getContainer();
-		const editorContainer = container.querySelector('.tox-editor-container');
 		const header = container.querySelector('.tox-editor-header') as HTMLElement | null;
-		if (!editorContainer || !header) return undefined;
+		if (!header) return undefined;
 
-		center.appendChild(header);
-		const sidebar = container.querySelector('.tox-sidebar-wrap');
+		const originalStyle = header.getAttribute('style');
+		header.classList.add('-note-title-toolbar');
+		const updatePosition = () => {
+			const centerRect = center.getBoundingClientRect();
+			const hostRect = center.parentElement.getBoundingClientRect();
+			header.style.position = 'fixed';
+			header.style.top = `${hostRect.top - 4}px`;
+			header.style.left = `${centerRect.left}px`;
+			header.style.width = `${centerRect.width}px`;
+			header.style.height = `${hostRect.height}px`;
+			header.style.zIndex = '3';
+		};
+		updatePosition();
+
+		const ownerWindow = center.ownerDocument.defaultView;
+		const resizeObserver = new ResizeObserver(updatePosition);
+		resizeObserver.observe(center);
+		resizeObserver.observe(center.parentElement);
+		ownerWindow?.addEventListener('resize', updatePosition);
+		ownerWindow?.addEventListener('scroll', updatePosition, true);
 
 		return () => {
-			if (!header.isConnected) return;
-			if (!editorContainer.isConnected) {
-				header.remove();
-				return;
-			}
-			if (sidebar && sidebar.parentElement === editorContainer) editorContainer.insertBefore(header, sidebar);
-			else editorContainer.prepend(header);
+			resizeObserver.disconnect();
+			ownerWindow?.removeEventListener('resize', updatePosition);
+			ownerWindow?.removeEventListener('scroll', updatePosition, true);
+			header.classList.remove('-note-title-toolbar');
+			if (originalStyle === null) header.removeAttribute('style');
+			else header.setAttribute('style', originalStyle);
 		};
 	}, [editor, editorReady, toolbarSlots.center]);
 

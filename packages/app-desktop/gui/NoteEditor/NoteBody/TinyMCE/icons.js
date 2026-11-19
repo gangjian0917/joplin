@@ -1,7 +1,7 @@
 // Paths follow Lucide (https://lucide.dev, ISC): one 24px grid, 2px round stroke.
 (function() {
 	const icon = (inner) => {
-		return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
+		return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
 	};
 
 	tinymce.IconManager.add('Joplin', {
@@ -14,6 +14,7 @@
 			'superscript': icon('<path d="m4 19 8-8"/><path d="m12 19-8-8"/><path d="M20 12h-4c0-1.5.442-2 1.5-2.5S20 8.334 20 7.002c0-.472-.17-.93-.484-1.29a2.105 2.105 0 0 0-2.617-.436c-.42.239-.738.614-.899 1.06"/>'),
 			'subscript': icon('<path d="m4 5 8 8"/><path d="m12 5-8 8"/><path d="M20 19h-4c0-1.5.44-2 1.5-2.5S20 15.33 20 14c0-.47-.17-.93-.48-1.29a2.11 2.11 0 0 0-2.62-.44c-.42.24-.74.62-.9 1.07"/>'),
 			'text-color': icon('<path d="M6.5 16 12 4.5 17.5 16"/><path d="M8.4 12.2h7.2"/><rect class="tox-icon-text-color__color" x="4" y="19" width="16" height="2" rx="1" fill="currentColor" stroke="none"/>'),
+			'color-swatch': icon('<path d="M6.5 16 12 4.5 17.5 16"/><path d="M8.4 12.2h7.2"/><rect class="tox-icon-text-color__color" x="4" y="19" width="16" height="2" rx="1" fill="currentColor" stroke="none"/>'),
 			'link': icon('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'),
 			'export': icon('<path d="m10 18 3-3-3-3"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M4 11V4a2 2 0 0 1 2-2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h7"/>'),
 			'sourcecode': icon('<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>'),

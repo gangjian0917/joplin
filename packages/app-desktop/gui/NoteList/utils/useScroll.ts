@@ -60,9 +60,11 @@ const useScroll = (itemsPerLine: number, noteCount: number, itemSize: Size, list
 	// }, []);
 
 	const makeItemIndexVisible = useCallback((itemIndex: number) => {
-		const lineTopFloat = scrollTop / itemSize.height;
+		const currentScrollTop = listRef.current?.scrollTop ?? scrollTop;
+		if (currentScrollTop !== scrollTop) setScrollTop(currentScrollTop);
+		const lineTopFloat = currentScrollTop / itemSize.height;
 		const topFloat = lineTopFloat * itemsPerLine;
-		const lineBottomFloat = (scrollTop + listSize.height - itemSize.height) / itemSize.height;
+		const lineBottomFloat = (currentScrollTop + listSize.height - itemSize.height) / itemSize.height;
 		const bottomFloat = lineBottomFloat * itemsPerLine;
 		const top = Math.min(noteCount - 1, Math.floor(topFloat) + 1);
 		const bottom = Math.max(0, Math.floor(bottomFloat));

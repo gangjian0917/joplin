@@ -10,11 +10,13 @@ import TagList from '../TagList';
 import { _ } from '@joplin/lib/locale';
 import { useCallback } from 'react';
 import KeymapService from '@joplin/lib/services/KeymapService';
+import time from '@joplin/lib/time';
 
 interface Props {
 	themeId: number;
 	tabMovesFocus: boolean;
 	noteId: string;
+	noteUserUpdatedTime: number;
 	setTagsToolbarButtonInfo: ToolbarButtonInfo;
 	selectedNoteTags: TagEntity[];
 }
@@ -99,6 +101,7 @@ const StatusBar: React.FC<Props> = props => {
 		{renderTagBar()}
 		<div className='spacer'/>
 		{keyboardStatus}
+		<span className='note-updated-time'>{time.formatMsToLocal(props.noteUserUpdatedTime)}</span>
 	</div>;
 };
 

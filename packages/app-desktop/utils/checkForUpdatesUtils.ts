@@ -1,4 +1,5 @@
 import { fileExtension } from '@joplin/lib/path-utils';
+import { compareVersions } from 'compare-versions';
 
 export interface CheckForUpdateOptions {
 	includePreReleases?: boolean;
@@ -27,6 +28,12 @@ export interface Release {
 	pageUrl: string;
 }
 
+export interface DatedPackage {
+	version: string;
+	date: string;
+	downloadUrl: string;
+}
+
 export type Platform = typeof process.platform;
 
 export type Architecture = typeof process.arch;
@@ -36,6 +43,61 @@ function getMajorMinorTagName(tagName: string) {
 	s.pop();
 	return s.join('.');
 }
+
+const parseDatedPackageVersion = (version: string) => {
+	const match = version.match(/^(\d+(?:\.\d+)+)(?:-(\d{8}))?$/);
+	if (!match) throw new Error(`Invalid package version: ${version}`);
+	return {
+		version: match[1],
+		date: match[2] ?? '00000000',
+	};
+};
+
+const isValidBuildDate = (date: string) => {
+	const year = Number(date.substring(0, 4));
+	const month = Number(date.substring(4, 6));
+	const day = Number(date.substring(6, 8));
+	const parsedDate = new Date(Date.UTC(year, month - 1, day));
+	return parsedDate.getUTCFullYear() === year && parsedDate.getUTCMonth() === month - 1 && parsedDate.getUTCDate() === day;
+};
+
+export const extractDatedPackagesFromReadme = (readme: string): DatedPackage[] => {
+	const packages: DatedPackage[] = [];
+	const markdownLinkPattern = /\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+	const baseUrl = 'https://github.com/gangjian0917/joplin/raw/main/';
+
+	for (const match of readme.matchAll(markdownLinkPattern)) {
+		const url = new URL(match[1], baseUrl);
+		if (url.protocol !== 'https:' || url.hostname !== 'github.com' || !url.pathname.startsWith('/gangjian0917/joplin/')) continue;
+
+		const filename = decodeURIComponent(url.pathname.substring(url.pathname.lastIndexOf('/') + 1));
+		const packageMatch = filename.match(/^Joplin-(\d+(?:\.\d+)+)-(\d{8})-arm64\.dmg$/i);
+		if (!packageMatch || !isValidBuildDate(packageMatch[2])) continue;
+
+		packages.push({
+			version: packageMatch[1],
+			date: packageMatch[2],
+			downloadUrl: url.toString(),
+		});
+	}
+
+	return packages;
+};
+
+export const findLatestDatedPackageUpdate = (packages: DatedPackage[], currentVersion: string): DatedPackage | null => {
+	const current = parseDatedPackageVersion(currentVersion);
+	const newerPackages = packages
+		.filter(candidate => {
+			const versionComparison = compareVersions(candidate.version, current.version);
+			return versionComparison > 0 || versionComparison === 0 && candidate.date > current.date;
+		})
+		.sort((a, b) => {
+			const versionComparison = compareVersions(b.version, a.version);
+			return versionComparison || b.date.localeCompare(a.date);
+		});
+
+	return newerPackages[0] ?? null;
+};
 
 export const extractVersionInfo = (releases: GitHubRelease[], platform: Platform, arch: Architecture, portable: boolean, options: CheckForUpdateOptions) => {
 	options = { includePreReleases: false, ...options };

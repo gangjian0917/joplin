@@ -4,12 +4,13 @@ import { _ } from '@joplin/lib/locale';
 import bridge from './services/bridge';
 import KvStore from '@joplin/lib/services/KvStore';
 import * as ArrayUtils from '@joplin/lib/ArrayUtils';
-import { CheckForUpdateOptions, extractVersionInfo, GitHubRelease, handleReleaseResponseError } from './utils/checkForUpdatesUtils';
+import { CheckForUpdateOptions, extractVersionInfo, GitHubRelease, handleReleaseResponseError, extractDatedPackagesFromReadme, findLatestDatedPackageUpdate, Release } from './utils/checkForUpdatesUtils';
 import { PackageInfo } from '@joplin/lib/versionInfo';
 import { compareVersions } from 'compare-versions';
 const packageInfo: PackageInfo = require('./packageInfo.js');
 
 const logger = Logger.create('checkForUpdates');
+const githubReadmeUrl = 'https://raw.githubusercontent.com/gangjian0917/joplin/main/README.md';
 
 let checkInBackground_ = false;
 let isCheckingForUpdate_ = false;
@@ -34,6 +35,31 @@ async function fetchLatestReleases() {
 	}
 
 	return (await response.json()) as GitHubRelease[];
+}
+
+async function fetchLatestDatedPackage(currentVersion: string): Promise<Release | null> {
+	const response = await shim.fetch(githubReadmeUrl);
+
+	if (!response.ok) {
+		const responseText = await response.text();
+		logger.error(`Cannot get latest package info from GitHub README (${response.status}): ${responseText.substr(0, 500)}`);
+		throw new Error(`Could not check for updates. Please try again later (Error ${response.status}).`);
+	}
+
+	const readme = await response.text();
+	const packages = extractDatedPackagesFromReadme(readme);
+	if (!packages.length) throw new Error('Could not find a dated Apple Silicon package in the GitHub README.');
+
+	const update = findLatestDatedPackageUpdate(packages, currentVersion);
+	if (!update) return null;
+
+	return {
+		version: `${update.version}-${update.date}`,
+		prerelease: false,
+		downloadUrl: update.downloadUrl,
+		notes: '',
+		pageUrl: 'https://github.com/gangjian0917/joplin#readme',
+	};
 }
 
 export async function isReleaseVersion(version: string): Promise<boolean | null> {
@@ -85,14 +111,16 @@ export default async function checkForUpdates(inBackground: boolean, parentWindo
 	logger.info(`Checking with options ${JSON.stringify(options)}`);
 
 	try {
-		const releases = await fetchLatestReleases();
-		const release = extractVersionInfo(releases, process.platform, process.arch, shim.isPortable(), options);
+		const useDatedReadmeUpdates = shim.isMac() && process.arch === 'arm64';
+		const release = useDatedReadmeUpdates
+			? await fetchLatestDatedPackage(packageInfo.version)
+			: extractVersionInfo(await fetchLatestReleases(), process.platform, process.arch, shim.isPortable(), options);
 
 		logger.info(`Current version: ${packageInfo.version}`);
-		logger.info(`Latest version: ${release.version}`);
-		logger.info('Is Pre-release:', release.prerelease);
+		logger.info(`Latest version: ${release?.version ?? 'none'}`);
+		logger.info('Is Pre-release:', release?.prerelease ?? false);
 
-		if (compareVersions(release.version, packageInfo.version) <= 0) {
+		if (!release || !useDatedReadmeUpdates && compareVersions(release.version, packageInfo.version) <= 0) {
 			if (!checkInBackground_) {
 				await bridge().showMessageBox(_('Current version is up-to-date.'));
 			}
@@ -122,7 +150,7 @@ export default async function checkForUpdates(inBackground: boolean, parentWindo
 				} else if (buttonIndex === 1) {
 					await addSkippedVersion(release.version);
 				} else if (buttonIndex === 2) {
-					void bridge().openExternal('https://joplinapp.org/help/about/changelog/desktop');
+					void bridge().openExternal(useDatedReadmeUpdates ? release.pageUrl : 'https://joplinapp.org/help/about/changelog/desktop');
 				}
 			}
 		}

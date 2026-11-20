@@ -552,7 +552,9 @@ function useMenu(props: Props) {
 			toolsItems.push(SpellCheckerService.instance().spellCheckerConfigMenuItem(props['spellChecker.languages'], props['spellChecker.enabled']));
 
 			function _checkForUpdates() {
-				if (Setting.value('featureFlag.autoUpdaterServiceEnabled')) {
+				if (shim.isMac() && process.arch === 'arm64') {
+					void checkForUpdates(false, bridge().mainWindow(), { includePreReleases: false });
+				} else if (Setting.value('featureFlag.autoUpdaterServiceEnabled')) {
 					ipcRenderer.send('check-for-updates');
 				} else {
 					void checkForUpdates(false, bridge().mainWindow(), { includePreReleases: Setting.value('autoUpdate.includePreReleases') });

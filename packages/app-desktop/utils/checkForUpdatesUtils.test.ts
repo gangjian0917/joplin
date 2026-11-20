@@ -1,4 +1,4 @@
-import { extractVersionInfo, Release, Platform, Architecture, GitHubRelease, handleReleaseResponseError } from './checkForUpdatesUtils';
+import { extractVersionInfo, Release, Platform, Architecture, GitHubRelease, handleReleaseResponseError, extractDatedPackagesFromReadme, findLatestDatedPackageUpdate } from './checkForUpdatesUtils';
 import { releases1, releases2 } from './checkForUpdatesUtilsTestData';
 
 describe('checkForUpdatesUtils', () => {
@@ -145,6 +145,30 @@ describe('checkForUpdatesUtils', () => {
 			pageUrl: releaseData.html_url,
 			prerelease: releaseData.prerelease,
 		});
+	});
+
+	it('should find a newer dated package by comparing version before build date', () => {
+		const packages = extractDatedPackagesFromReadme(`
+			[Older version, newer date](https://github.com/gangjian0917/joplin/raw/main/releases/Joplin-3.7.99-20261120-arm64.dmg)
+			[Newer version](https://github.com/gangjian0917/joplin/raw/main/releases/Joplin-3.8.0-20261001-arm64.dmg)
+			[Same version, newer date](https://github.com/gangjian0917/joplin/raw/main/releases/Joplin-3.7.22-20261119-arm64.dmg)
+			[Undated package](https://github.com/gangjian0917/joplin/raw/main/releases/Joplin-3.9.0-arm64.dmg)
+		`);
+
+		expect(findLatestDatedPackageUpdate(packages, '3.7.22-20261118')).toEqual({
+			version: '3.8.0',
+			date: '20261001',
+			downloadUrl: 'https://github.com/gangjian0917/joplin/raw/main/releases/Joplin-3.8.0-20261001-arm64.dmg',
+		});
+	});
+
+	it('should not report a package with the same or older version and build date', () => {
+		const packages = extractDatedPackagesFromReadme(`
+			[Older build](https://github.com/gangjian0917/joplin/raw/main/releases/Joplin-3.7.22-20261117-arm64.dmg)
+			[Older version](https://github.com/gangjian0917/joplin/raw/main/releases/Joplin-3.7.21-20261119-arm64.dmg)
+		`);
+
+		expect(findLatestDatedPackageUpdate(packages, '3.7.22-20261118')).toBeNull();
 	});
 
 	test.each([

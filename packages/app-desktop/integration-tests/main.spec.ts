@@ -104,6 +104,18 @@ test.describe('main', () => {
 
 		// Should render KaTeX (inline)
 		await expect(viewer.content.locator('.joplin-editable > .katex').first()).toBeAttached();
+
+		const mermaidScripts = viewer.content.locator('#joplin-container-pluginAssetsContainer script[src*="mermaid/"]');
+		await expect(mermaidScripts).toHaveCount(2);
+
+		await mainScreen.createNewNote('Note without Mermaid');
+		await editor.showNoteViewer();
+		await mainScreen.noteList.getNoteItemByTitle('🚧 Test 🚧').click();
+
+		await expect(
+			viewer.content.locator('pre.mermaid text', { hasText: testCommitId }),
+		).toBeVisible();
+		await expect(mermaidScripts).toHaveCount(2);
 	});
 
 	test('should correctly resize large images', async ({ electronApp, mainWindow }) => {

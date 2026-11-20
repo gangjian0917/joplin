@@ -1,5 +1,6 @@
 import Setting, { Env } from './models/Setting';
 import { reg } from './registry';
+import shim from './shim';
 
 const sync = {
 	start: jest.fn().mockReturnValue({}),
@@ -25,6 +26,19 @@ describe('registry', () => {
 	beforeEach(() => {
 		jest.useFakeTimers();
 		Setting.setValue('sync.interval', 300);
+	});
+
+	it('uses a 30-second quiet period for desktop edits', () => {
+		const isElectron = jest.spyOn(shim, 'isElectron');
+		try {
+			isElectron.mockReturnValue(true);
+			expect(reg.syncAsYouTypeInterval()).toBe(30 * 1000);
+
+			isElectron.mockReturnValue(false);
+			expect(reg.syncAsYouTypeInterval()).toBe(1000);
+		} finally {
+			isElectron.mockRestore();
+		}
 	});
 
 	afterEach(() => {

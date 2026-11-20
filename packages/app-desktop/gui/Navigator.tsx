@@ -1,10 +1,13 @@
 import * as React from 'react';
+import { Dispatch } from 'redux';
 import { connect } from 'react-redux';
 import Setting from '@joplin/lib/models/Setting';
 import { AppState, AppStateRoute } from '../app.reducer';
 import bridge from '../services/bridge';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { WindowIdContext } from './NewWindowOrIFrame';
+import Dialog from '@joplin/lib/components/Dialog';
+import { _ } from '@joplin/lib/locale';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Each registered screen has its own props shape; the navigator just spreads them through
 type ScreenProps = any;
@@ -17,6 +20,7 @@ interface AppScreen {
 interface Props {
 	route: AppStateRoute;
 	screens: Record<string, AppScreen>;
+	dispatch: Dispatch;
 
 	style: React.CSSProperties;
 	className?: string;
@@ -94,6 +98,8 @@ const useContainerSize = (container: HTMLElement|null) => {
 const NavigatorComponent: React.FC<Props> = props => {
 	const route = props.route;
 	const screenInfo = props.screens[route?.routeName];
+	const isPreferencesModal = route.routeName === 'Config';
+	const mainScreenInfo = props.screens.Main;
 	const [screenContainer, setScreenContainer] = useState<HTMLElement|null>(null);
 
 	useWindowTitleManager(screenInfo);
@@ -102,13 +108,13 @@ const NavigatorComponent: React.FC<Props> = props => {
 
 	if (!route) throw new Error('Route must not be null');
 
-	const screenProps = route.props ? route.props : {};
-	const Screen = screenInfo.screen;
+	const screenProps = isPreferencesModal ? {} : route.props ? route.props : {};
+	const Screen = isPreferencesModal ? mainScreenInfo.screen : screenInfo.screen;
 	const showSubscreenTitleBar = route.routeName !== 'Main' && document.documentElement.classList.contains('mac-hidden-titlebar');
 
 	return (
 		<div style={props.style} className={`navigator-root ${props.className || ''}`}>
-			{showSubscreenTitleBar && (
+			{showSubscreenTitleBar && !isPreferencesModal && (
 				<div className='subscreen-titlebar'>
 					{screenInfo?.title?.() ?? ''}
 				</div>
@@ -116,6 +122,27 @@ const NavigatorComponent: React.FC<Props> = props => {
 			<div ref={setScreenContainer} className='navigator-screen-container'>
 				<Screen style={size} {...screenProps} />
 			</div>
+			{isPreferencesModal && (
+				<Dialog
+					className='preferences-modal'
+					onCancel={() => props.dispatch({ type: 'NAV_BACK' })}
+				>
+					<div className='preferences-modal-header'>
+						<h1>{_('Options')}</h1>
+						<button
+							type='button'
+							className='preferences-modal-close'
+							aria-label={_('Close')}
+							onClick={() => props.dispatch({ type: 'NAV_BACK' })}
+						>
+							<i className='fas fa-times' aria-hidden='true'/>
+						</button>
+					</div>
+					<div className='preferences-modal-body'>
+						{React.createElement(screenInfo.screen, { ...route.props, style: { width: '100%', height: '100%' } })}
+					</div>
+				</Dialog>
+			)}
 		</div>
 	);
 };

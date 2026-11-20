@@ -46,9 +46,9 @@ const SidebarComponent = (props: Props) => {
 	const effectiveWidth = measuredWidth || props.width || 0;
 	const isCompact = effectiveWidth > 0 && effectiveWidth <= 84;
 
-	const renderSynchronizeButton = (type: string) => {
-		const label = type === 'sync' ? _('Synchronise') : _('Cancel');
-		const syncHasErrors = type === 'sync' && !props.syncPending && !!props.syncReport.errors?.length;
+	const renderSynchronizeButton = (isSyncing: boolean) => {
+		const label = isSyncing ? _('Cancel') : _('Synchronise');
+		const syncHasErrors = !isSyncing && !props.syncPending && !!props.syncReport.errors?.length;
 		const iconName = syncHasErrors ? 'fas fa-exclamation-triangle' : 'icon-sync';
 
 		return (
@@ -56,13 +56,14 @@ const SidebarComponent = (props: Props) => {
 				level={ButtonLevel.SidebarSecondary}
 				size={isCompact ? ButtonSize.Small : ButtonSize.Normal}
 				isSquare={true}
-				className={`sidebar-sync-button ${type === 'sync' ? '' : '-syncing'} ${syncHasErrors ? '-error' : ''} ${isCompact ? '-compact' : ''}`}
+				className={`sidebar-sync-button ${syncHasErrors ? '-error' : ''} ${isCompact ? '-compact' : ''}`}
 				iconName={iconName}
 				iconLabel={syncHasErrors ? _('Synchronisation error') : undefined}
+				aria-busy={isSyncing}
 				key="sync_button"
 				tooltip={label}
 				onClick={() => {
-					void CommandService.instance().execute('synchronize', type !== 'sync');
+					void CommandService.instance().execute('synchronize', isSyncing);
 				}}
 			/>
 		);
@@ -92,7 +93,7 @@ const SidebarComponent = (props: Props) => {
 		);
 	}
 
-	const syncButton = renderSynchronizeButton(props.syncStarted ? 'cancel' : 'sync');
+	const syncButton = renderSynchronizeButton(props.syncStarted);
 
 	const hasSyncReport = syncReportText.length > 0;
 

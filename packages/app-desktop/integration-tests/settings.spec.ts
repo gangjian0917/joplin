@@ -12,6 +12,7 @@ test.describe('settings', () => {
 		await expect(sortOrderLocator).toBeVisible();
 
 		await mainScreen.openSettings(electronApp);
+		await expect(mainWindow.locator('dialog.preferences-modal')).toBeVisible();
 
 		// Should be on the settings screen
 		const settingsScreen = new SettingsScreen(mainWindow);

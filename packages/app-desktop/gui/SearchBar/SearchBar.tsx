@@ -75,6 +75,8 @@ function SearchBar(props: Props) {
 	}
 
 	useEffect(() => {
+		if (!searchStarted || !query.trim()) return undefined;
+
 		function search(searchId: string, query: string, dispatch: Dispatch) {
 			dispatch({
 				type: 'SEARCH_UPDATE',
@@ -94,7 +96,7 @@ function SearchBar(props: Props) {
 		}
 
 		const debouncedSearch = debounce(search, 500);
-		if (searchStarted) debouncedSearch(searchId.current, query, props.dispatch);
+		debouncedSearch(searchId.current, query, props.dispatch);
 		return () => {
 			debouncedSearch.clear();
 		};

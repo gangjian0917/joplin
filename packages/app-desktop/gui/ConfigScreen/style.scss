@@ -4,6 +4,65 @@
 @use "./controls/AiStatus.scss" as ai-status;
 @use "./controls/NoteLockSettings.scss" as note-lock-settings;
 
+.preferences-modal {
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+
+	> .content {
+		width: min(1000px, calc(100vw - 48px));
+		height: min(850px, calc(100vh - 48px));
+		min-height: 0;
+		max-height: 100%;
+		padding: 0;
+		overflow: hidden;
+		border-radius: 12px;
+	}
+}
+
+.preferences-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex: 0 0 56px;
+	padding: 0 22px;
+	border-bottom: 1px solid var(--joplin-divider-color);
+
+	> h1 {
+		margin: 0;
+		font-size: calc(var(--joplin-font-size) * 1.2);
+		font-weight: 600;
+	}
+}
+
+.preferences-modal-close {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	border: none;
+	border-radius: 6px;
+	background: transparent;
+	color: var(--joplin-color);
+	font-size: 20px;
+	cursor: pointer;
+
+	&:hover {
+		background-color: var(--joplin-background-color-hover2);
+	}
+}
+
+.preferences-modal-body {
+	height: calc(100% - 56px);
+	min-height: 0;
+}
+
+.preferences-modal-body > .config-screen {
+	height: 100%;
+}
+
 .config-screen-content-wrapper {
 	padding: 24px;
 	overflow: auto;

@@ -33,6 +33,12 @@
  	display: flex;
 }
 
+.note-list-item mark {
+	background-color: transparent;
+	color: var(--joplin-color4);
+	font-weight: 600;
+}
+
 .note-list-item-wrapper {
 	border-color: var(--joplin-color);
 	position: relative;

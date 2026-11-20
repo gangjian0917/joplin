@@ -3,6 +3,17 @@ import MainScreen from './models/MainScreen';
 import setMessageBoxResponse from './util/setMessageBoxResponse';
 
 test.describe('noteList', () => {
+	test('expanding search should not clear the note list before a query is entered', async ({ mainWindow }) => {
+		const mainScreen = await new MainScreen(mainWindow).setup();
+		await mainScreen.createNewNote('test note');
+
+		await mainWindow.getByRole('button', { name: 'Search' }).click();
+		await expect(mainWindow.getByPlaceholder('Search...')).toBeVisible();
+		await mainWindow.waitForTimeout(600);
+
+		await expect(mainScreen.noteList.getNoteItemByTitle('test note')).toBeVisible();
+	});
+
 	test('should be possible to edit notes in a different notebook when searching', async ({ mainWindow, electronApp }) => {
 		const mainScreen = await new MainScreen(mainWindow).setup();
 		const sidebar = mainScreen.sidebar;

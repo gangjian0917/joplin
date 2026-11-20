@@ -13,6 +13,9 @@ import Logger, { TargetType } from '@joplin/utils/Logger';
 import Setting from '@joplin/lib/models/Setting';
 import actionApi from '@joplin/lib/services/rest/actionApi.desktop';
 import BaseApplication, { StartOptions } from '@joplin/lib/BaseApplication';
+import { ModelType } from '@joplin/lib/BaseModel';
+import ItemChange from '@joplin/lib/models/ItemChange';
+import Synchronizer from '@joplin/lib/Synchronizer';
 import DebugService from '@joplin/lib/debug/DebugService';
 import { _, setLocale } from '@joplin/lib/locale';
 import SpellCheckerService from '@joplin/lib/services/spellChecker/SpellCheckerService';
@@ -750,6 +753,30 @@ class Application extends BaseApplication {
 				Setting.setValue('linking.extraAllowedExtensions', newExtensions);
 			});
 
+			let isInBackground = false;
+			const syncPendingChanges = () => {
+				if (isInBackground) return;
+				isInBackground = true;
+
+				const state = this.store().getState();
+				if (!state.syncPending) return;
+
+				if (state.syncStarted) {
+					void reg.waitForSyncFinishedThenSync();
+				} else {
+					void reg.scheduleSync(0, { syncSteps: Synchronizer.partialSyncSteps });
+				}
+			};
+			window.addEventListener('blur', syncPendingChanges);
+			window.addEventListener('focus', () => { isInBackground = false; });
+			document.addEventListener('visibilitychange', () => {
+				if (document.visibilityState === 'hidden') {
+					syncPendingChanges();
+				} else {
+					isInBackground = false;
+				}
+			});
+
 			ipcRenderer.on('window-focused', (_event, newWindowId) => {
 				const currentWindowId = this.store().getState().windowId;
 				if (newWindowId !== currentWindowId) {
@@ -778,6 +805,15 @@ class Application extends BaseApplication {
 
 		addTask('app/set up SpellCheckerService', async () => {
 			await SpellCheckerService.instance().initialize(new SpellCheckerServiceDriverNative());
+		});
+
+		addTask('app/schedule sync after item changes', () => {
+			eventManager.on(EventName.ItemChange, ({ itemType, changeSource }) => {
+				if (changeSource === ItemChange.SOURCE_SYNC) return;
+				if (itemType === ModelType.Note || itemType === ModelType.Folder) return;
+
+				void reg.scheduleSync(reg.syncAsYouTypeInterval(), { syncSteps: Synchronizer.partialSyncSteps });
+			});
 		});
 
 		addTask('app/listen for resource events', () => {

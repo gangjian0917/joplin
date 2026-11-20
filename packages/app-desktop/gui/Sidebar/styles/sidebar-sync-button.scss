@@ -14,15 +14,11 @@
 	margin-right: 0 !important;
 }
 
+.sidebar-sync-button[aria-busy='true'] > .icon {
+	animation: icon-infinite-rotation 0.75s linear infinite;
+}
+
 .sidebar-sync-button {
-	&.-syncing > .icon {
-		animation: icon-infinite-rotation 1s linear infinite;
-
-		@media (prefers-reduced-motion: reduce) {
-			animation: none;
-		}
-	}
-
 	&.-error > .icon {
 		font-size: 1.25em;
 	}

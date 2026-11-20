@@ -89,6 +89,7 @@ export default class ItemChange extends BaseModel {
 					itemType: itemType,
 					itemId,
 					changeId,
+					changeSource,
 					eventType: type,
 				});
 			}

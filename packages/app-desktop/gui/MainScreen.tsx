@@ -52,6 +52,7 @@ interface Props {
 	plugins: PluginStates;
 	pluginHtmlContents: PluginHtmlContents;
 	hasNotesBeingSaved: boolean;
+	syncPending: boolean;
 	dispatch: Dispatch;
 	mainLayout: LayoutItem;
 	style: React.CSSProperties & { width?: number; height?: number };
@@ -291,6 +292,11 @@ class MainScreenComponent extends React.Component<Props, State> {
 			this.waitForNotesSavedIID_ = null;
 
 			const sendCanClose = async (canClose: boolean) => {
+				if (canClose && this.props.syncPending) {
+					canClose = false;
+					this.props.dispatch({ type: 'QUIT_SYNC_DIALOG_OPEN' });
+				}
+
 				logger.info('[appClose] Sending appCloseReply - canClose:', canClose);
 				if (canClose) {
 					Setting.setValue('wasClosedSuccessfully', true);
@@ -831,6 +837,7 @@ const mapStateToProps = (state: AppState) => {
 		plugins: state.pluginService.plugins,
 		pluginHtmlContents: state.pluginService.pluginHtmlContents,
 		hasNotesBeingSaved: stateUtils.hasNotesBeingSaved(state),
+		syncPending: state.syncPending,
 		layoutMoveMode: state.layoutMoveMode,
 		mainLayout: state.mainLayout,
 		shareInvitations: state.shareService.shareInvitations,

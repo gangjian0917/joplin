@@ -6,6 +6,8 @@ import restart from '../services/restart';
 import BannerContent from './NoteEditor/WarningBanner/BannerContent';
 import { _ } from '@joplin/lib/locale';
 import Logger from '@joplin/utils/Logger';
+import shim from '@joplin/lib/shim';
+import { macosFontFamily } from '@joplin/lib/themes/macos';
 const packageInfo: PackageInfo = require('../packageInfo.js');
 import { ipcRenderer } from 'electron';
 
@@ -161,7 +163,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
 				const isLegacyEditorError = !!this.state.error.stack.includes('CodeMirror/v5');
 
 				return (
-					<div style={{ overflow: 'auto', fontFamily: 'sans-serif', padding: '5px 20px' }}>
+					<div style={{ overflow: 'auto', fontFamily: shim.isMac() ? macosFontFamily : 'sans-serif', padding: '5px 20px' }}>
 						<SwitchToNewEditorBanner isVisible={isLegacyEditorError} />
 						<h1>Error</h1>
 						{this.renderMessage()}

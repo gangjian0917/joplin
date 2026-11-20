@@ -7,6 +7,7 @@ import { ipcRenderer } from 'electron';
 import Setting from '@joplin/lib/models/Setting';
 import restart from '../services/restart';
 import shim from '@joplin/lib/shim';
+import { macosFontFamily } from '@joplin/lib/themes/macos';
 
 function useAppCloseHandler(upgradeResult: SyncTargetUpgradeResult) {
 	useEffect(() => {
@@ -43,7 +44,7 @@ function useStyle() {
 		const element = document.createElement('style');
 		element.appendChild(document.createTextNode(`
 			body {
-				font-family: sans-serif;
+				font-family: ${shim.isMac() ? macosFontFamily : 'sans-serif'};
 				padding: 5px 20px;
 				color: #333333;
 			}

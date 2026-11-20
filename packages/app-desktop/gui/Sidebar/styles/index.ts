@@ -82,7 +82,7 @@ export const StyledHeaderLabel = styled.span`
 	color: ${(props: StyleProps) => shim.isMac() ? props.theme.colorFaded2 : props.theme.color2};
 	font-size: ${(props: StyleProps) => shim.isMac() ? 11 : Math.round(props.theme.fontSize * 1.1)}px;
 	font-weight: ${shim.isMac() ? 600 : 'bold'};
-	letter-spacing: ${shim.isMac() ? '0.06em' : 'normal'};
+	letter-spacing: normal;
 `;
 
 function listItemTextColor(props: StyleProps) {
@@ -98,8 +98,8 @@ function listItemTextColor(props: StyleProps) {
 
 export const StyledListItemAnchor = styled.a`
 	font-size: ${(props: StyleProps) => shim.isMac() ? props.theme.fontSize : Math.round(props.theme.fontSize * 1.0833333)}px;
-	font-weight: ${(props: StyleProps) => props.selected ? 600 : 400};
-	letter-spacing: ${shim.isMac() ? '-0.006em' : 'normal'};
+	font-weight: ${(props: StyleProps) => shim.isMac() ? 400 : props.selected ? 600 : 400};
+	letter-spacing: normal;
 	text-decoration: none;
 	color: ${(props: StyleProps) => listItemTextColor(props)};
 	cursor: default;

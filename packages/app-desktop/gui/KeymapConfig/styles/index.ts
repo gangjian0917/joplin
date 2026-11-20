@@ -1,4 +1,5 @@
 import { ThemeStyle, buildStyle } from '@joplin/lib/theme';
+import shim from '@joplin/lib/shim';
 
 export default function styles(themeId: number) {
 	return buildStyle('KeymapConfigScreen', themeId, (theme: ThemeStyle) => {
@@ -48,7 +49,7 @@ export default function styles(themeId: number) {
 				background: 'transparent',
 			},
 			kbd: {
-				fontFamily: 'sans-serif',
+				fontFamily: shim.isMac() ? theme.fontFamily : 'sans-serif',
 				border: '1px solid',
 				borderRadius: 4,
 				backgroundColor: theme.raisedBackgroundColor,

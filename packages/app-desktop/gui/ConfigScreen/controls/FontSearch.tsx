@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useState, useCallback, CSSProperties, useEffect } from 'react';
 import { _ } from '@joplin/lib/locale';
 import { SettingItemSubType } from '@joplin/lib/models/Setting';
+import shim from '@joplin/lib/shim';
 import InlineCombobox from '../../InlineCombobox';
 
 interface Props {
@@ -58,7 +59,7 @@ const FontSearch = (props: Props) => {
 			inputStyle={style}
 			value={value}
 			suggestedValues={filteredAvailableFonts}
-			renderOption={font => <span style={{ fontFamily: font }}>{font}</span>}
+			renderOption={font => <span style={shim.isMac() ? undefined : { fontFamily: font }}>{font}</span>}
 			controls={comboboxControls}
 			onChange={onChange}
 			inputId={props.inputId}

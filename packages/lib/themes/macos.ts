@@ -2,17 +2,16 @@ import Setting from '../models/Setting';
 import shim from '../shim';
 import { Theme, ThemeAppearance } from './type';
 
-// macOS 15 system text. `-apple-system` is SF Pro, and uses PingFang SC for
-// Chinese. PingFang must not come first: it contains Latin glyphs and would
-// replace SF Pro.
-export const macosFontFamily = '-apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", sans-serif';
+// `-apple-system` uses the native system font, with macOS choosing the right
+// fallback for other scripts.
+export const macosFontFamily = '-apple-system, BlinkMacSystemFont, sans-serif';
 export const macosMonospaceFontFamily = 'ui-monospace, "SF Mono", Menlo, Monaco, monospace';
 
-// NSFont.systemFontSize is 13pt. Note body follows Apple Notes at 16pt.
+// macOS UI, body, and footnote text styles.
 export const macosUiFontSize = 13;
 export const macosBodyFontSize = 16;
 export const macosSecondaryFontSize = 11;
-export const macosNoteTitleFontSize = 24;
+export const macosNoteTitleFontSize = 17;
 
 const light: Partial<Theme> = {
 	appearance: ThemeAppearance.Light,

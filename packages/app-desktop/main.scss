@@ -202,9 +202,9 @@ General classes
 
 body, button, input, textarea, select {
 	color: var(--joplin-color);
-	font-family: var(--joplin-font-family, -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", sans-serif);
+	font-family: var(--joplin-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
 	font-size: var(--joplin-font-size, 13px);
-	letter-spacing: -0.006em;
+	font-weight: normal;
 	-webkit-font-smoothing: antialiased;
 }
 
@@ -215,7 +215,6 @@ div, span, a {
 h2 {
 	font-size: 17px;
 	font-weight: 600;
-	letter-spacing: -0.022em;
 
 	&.-no-top-margin {
 		margin-top: 0;

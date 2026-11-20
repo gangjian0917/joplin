@@ -181,7 +181,7 @@ export function extraStyles(theme: ThemeAndDerivedColors) {
 	};
 
 	const tagStyle = {
-		fontSize: mac ? 12 : baseFontSize,
+		fontSize: mac ? macosSecondaryFontSize : baseFontSize,
 		fontFamily: globalStyle.fontFamily,
 		paddingTop: mac ? 2 : 4,
 		paddingBottom: mac ? 2 : 4,
@@ -241,17 +241,15 @@ export function extraStyles(theme: ThemeAndDerivedColors) {
 	const h1Style = {
 		...textStyle,
 		color: theme.color,
-		fontSize: mac ? 17 : textStyle.fontSize * 1.5,
+		fontSize: mac ? baseFontSize * 1.3 : textStyle.fontSize * 1.5,
 		fontWeight: mac ? literal('600') : literal('bold'),
-		...(mac ? { letterSpacing: '-0.022em' } : {}),
 	};
 
 	const h2Style = {
 		...textStyle,
 		color: theme.color,
-		fontSize: mac ? 15 : textStyle.fontSize * 1.3,
+		fontSize: mac ? baseFontSize * 1.15 : textStyle.fontSize * 1.3,
 		fontWeight: mac ? literal('600') : literal('bold'),
-		...(mac ? { letterSpacing: '-0.016em' } : {}),
 	};
 
 	return {

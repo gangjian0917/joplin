@@ -98,7 +98,7 @@ const useContainerSize = (container: HTMLElement|null) => {
 const NavigatorComponent: React.FC<Props> = props => {
 	const route = props.route;
 	const screenInfo = props.screens[route?.routeName];
-	const isPreferencesModal = route.routeName === 'Config';
+	const isModalScreen = route.routeName === 'Config' || route.routeName === 'Status';
 	const mainScreenInfo = props.screens.Main;
 	const [screenContainer, setScreenContainer] = useState<HTMLElement|null>(null);
 
@@ -108,13 +108,13 @@ const NavigatorComponent: React.FC<Props> = props => {
 
 	if (!route) throw new Error('Route must not be null');
 
-	const screenProps = isPreferencesModal ? {} : route.props ? route.props : {};
-	const Screen = isPreferencesModal ? mainScreenInfo.screen : screenInfo.screen;
+	const screenProps = isModalScreen ? {} : route.props ? route.props : {};
+	const Screen = isModalScreen ? mainScreenInfo.screen : screenInfo.screen;
 	const showSubscreenTitleBar = route.routeName !== 'Main' && document.documentElement.classList.contains('mac-hidden-titlebar');
 
 	return (
 		<div style={props.style} className={`navigator-root ${props.className || ''}`}>
-			{showSubscreenTitleBar && !isPreferencesModal && (
+			{showSubscreenTitleBar && !isModalScreen && (
 				<div className='subscreen-titlebar'>
 					{screenInfo?.title?.() ?? ''}
 				</div>
@@ -122,13 +122,13 @@ const NavigatorComponent: React.FC<Props> = props => {
 			<div ref={setScreenContainer} className='navigator-screen-container'>
 				<Screen style={size} {...screenProps} />
 			</div>
-			{isPreferencesModal && (
+			{isModalScreen && (
 				<Dialog
 					className='preferences-modal'
 					onCancel={() => props.dispatch({ type: 'NAV_BACK' })}
 				>
 					<div className='preferences-modal-header'>
-						<h1>{_('Options')}</h1>
+						<h1>{screenInfo?.title?.() ?? _('Options')}</h1>
 						<button
 							type='button'
 							className='preferences-modal-close'

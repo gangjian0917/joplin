@@ -6,7 +6,7 @@
 
 许可证仍是上游的 AGPL-3.0-or-later。
 
-直接下载已编译的 Apple Silicon 安装包：[releases/Joplin-3.7.22-arm64.dmg](https://github.com/gangjian0917/joplin/raw/main/releases/Joplin-3.7.22-arm64.dmg)（2026-11-18 构建）。同目录另有带日期的副本 [Joplin-3.7.22-20261118-arm64.dmg](https://github.com/gangjian0917/joplin/raw/main/releases/Joplin-3.7.22-20261118-arm64.dmg)。
+直接下载已编译的 Apple Silicon 安装包：[releases/Joplin-3.7.22-arm64.dmg](https://github.com/gangjian0917/joplin/raw/main/releases/Joplin-3.7.22-arm64.dmg)（2026-11-20 构建）。同目录另有带日期的副本 [Joplin-3.7.22-20261120-arm64.dmg](https://github.com/gangjian0917/joplin/raw/main/releases/Joplin-3.7.22-20261120-arm64.dmg)。
 
 ## 项目目标
 
@@ -28,12 +28,12 @@
 
 ### 体积
 
-2026-11-18 在这台 M2 上重新打包（主页下载链接对应该构建）：
+2026-11-20 在这台 M2 上重新打包（主页下载链接对应该构建）：
 
 | 产物 | 优化前 | 优化后 |
 | --- | --- | --- |
 | `Joplin.app` | 584MB | 350MB |
-| `Joplin-3.7.22-arm64.dmg` | 201MB | 123MB |
+| `Joplin-3.7.22-arm64.dmg` | 201MB | 124MB |
 | `app.asar` | 221MB | 72MB |
 
 打包时排除：

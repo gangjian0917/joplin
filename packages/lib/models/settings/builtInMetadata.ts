@@ -1725,7 +1725,7 @@ const builtInMetadata = (Setting: typeof SettingType) => {
 			subType: SettingItemSubType.FontFamily,
 		},
 
-		'style.editor.contentMaxWidth': { value: 0, type: SettingItemType.Int, public: true, storage: SettingStorage.File, isGlobal: true, appTypes: [AppType.Desktop], section: 'editor', label: () => _('Editor maximum width'), description: () => _('Set it to 0 to make it take the complete available space. Recommended width is 600.') },
+		'style.editor.contentMaxWidth': { value: 1000, type: SettingItemType.Int, public: true, storage: SettingStorage.File, isGlobal: true, appTypes: [AppType.Desktop], section: 'editor', label: () => _('Editor maximum width'), description: () => _('Set it to 0 to make it take the complete available space. Recommended width is 1000.') },
 
 		'style.scrollbarSize': {
 			value: ScrollbarSize.Small,

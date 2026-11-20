@@ -69,6 +69,56 @@ describe('ChatConversation', () => {
 		expect(BaseModel.dispatch).toHaveBeenCalledWith({ type: 'AI_CHAT_ADD_TOOL_RESULT', conversationId: id, toolCall: toolResult });
 	});
 
+	it('should persist the consumed state of an AI edit undo action', async () => {
+		const id = uuid.create();
+		const assistant: ChatStandardMessage = { role: ChatRole.Assistant, content: '', toolCalls: [{ toolName: 'editor_appendToNote', callId: 'call-undo', arguments: {}, parseError: null }] };
+		await ChatConversation.addMessage(id, makeMessage({ role: 'assistant', text: '', raw: [assistant] }));
+		await ChatConversation.addToolResult(id, {
+			role: ChatRole.Tool,
+			content: 'Added text',
+			toolName: 'editor_appendToNote',
+			toolCallId: 'call-undo',
+			isError: false,
+			userDescription: 'Added 1 word',
+			isEdit: true,
+			editUndo: { noteId: 'note-a', before: 'Before', after: 'After' },
+		});
+
+		await ChatConversation.markToolUndoApplied(id, 'call-undo');
+
+		expect((await ChatConversation.messages(id))[0].raw[1]).toMatchObject({ editUndo: null });
+		expect(BaseModel.dispatch).toHaveBeenCalledWith({ type: 'AI_CHAT_UNDO_APPLIED', conversationId: id, toolCallId: 'call-undo' });
+	});
+
+	it('should compact model history without removing the displayed transcript', async () => {
+		const id = uuid.create();
+		const userMessage = makeMessage({ role: 'user', text: 'Question', raw: [{ role: ChatRole.User, content: 'Question' }] });
+		const assistantMessage = makeMessage({ role: 'assistant', text: 'Answer', raw: [{ role: ChatRole.Assistant, content: 'Answer' }] });
+		const summary = makeMessage({
+			role: 'assistant',
+			text: '',
+			hide: true,
+			raw: [{ role: ChatRole.User, content: 'Earlier conversation summary' }],
+		});
+		await ChatConversation.addMessage(id, userMessage);
+		await ChatConversation.addMessage(id, assistantMessage);
+
+		await ChatConversation.compact(id, summary);
+
+		expect(await ChatConversation.messages(id)).toMatchObject([
+			{ id: userMessage.id, text: 'Question', raw: [] },
+			{ id: assistantMessage.id, text: 'Answer', raw: [] },
+			{ id: summary.id, text: '', hide: true, raw: summary.raw },
+		]);
+		expect(BaseModel.dispatch).toHaveBeenCalledWith({
+			type: 'AI_CHAT_COMPACT',
+			conversationId: id,
+			message: summary,
+			compactedMessageIds: [userMessage.id, assistantMessage.id],
+			preserveMessageId: undefined,
+		});
+	});
+
 	it('should delete the conversation and its messages', async () => {
 		const id = uuid.create();
 		const kept = uuid.create();

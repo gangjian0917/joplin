@@ -4,8 +4,8 @@ import BaseModel from '@joplin/lib/BaseModel';
 import ChatConversation from '@joplin/lib/models/ChatConversation';
 import Note from '@joplin/lib/models/Note';
 import CommandService from '@joplin/lib/services/CommandService';
-import { runNoteChat } from '@joplin/lib/services/ai/noteChat';
-import { ChatRole } from '@joplin/lib/services/ai/types';
+import { compactChatHistory, estimateHistoryTokens, noteChatAutoCompactThreshold, runNoteChat } from '@joplin/lib/services/ai/noteChat';
+import { ChatRole, ChatStandardMessage, ChatToolMessage } from '@joplin/lib/services/ai/types';
 import { setupDatabaseAndSynchronizer, switchClient } from '@joplin/lib/testing/test-utils';
 import appReducer, { AiChatMessage, createAppDefaultState, createAppDefaultWindowState } from '../../app.reducer';
 import ChatPanel from './ChatPanel';
@@ -13,8 +13,19 @@ import { WindowIdContext } from '../NewWindowOrIFrame';
 import uuid from '@joplin/lib/uuid';
 import '../../utils/window/eventHandlerOverrides';
 
-jest.mock('@joplin/lib/services/ai/noteChat', () => ({ runNoteChat: jest.fn() }));
-jest.mock('./ChatMessageItem', () => ({ message }: { message: { text: string } }) => <div>{message.text}</div>);
+jest.mock('@joplin/lib/services/ai/noteChat', () => ({
+	runNoteChat: jest.fn(),
+	compactChatHistory: jest.fn(),
+	estimateHistoryTokens: jest.fn(() => 0),
+	noteChatAutoCompactThreshold: 60000,
+}));
+jest.mock('./ChatMessageItem', () => ({ message, onUndo }: { message: AiChatMessage; onUndo: (result: ChatToolMessage)=> void }) => {
+	const undoResult = message.raw.find((entry): entry is ChatToolMessage => entry.role === 'tool' && !!entry.editUndo);
+	return <div>
+		{message.text}
+		{undoResult && <button type='button' onClick={() => onUndo(undoResult)}>Undo</button>}
+	</div>;
+});
 
 const Panel = ChatPanel.WrappedComponent;
 const message: AiChatMessage = { id: 'question', createdTime: 1, role: 'user', text: 'Question', raw: [], noteId: 'note-a', noteTitle: 'A' };
@@ -48,6 +59,11 @@ describe('ChatPanel', () => {
 		await switchClient(1);
 		Element.prototype.scrollIntoView = jest.fn();
 		jest.mocked(runNoteChat).mockReset();
+		jest.mocked(compactChatHistory).mockReset().mockResolvedValue([
+			{ role: ChatRole.User, content: 'Earlier conversation summary' },
+			{ role: ChatRole.Assistant, content: 'I will use this summary as prior conversation context.' },
+		]);
+		jest.mocked(estimateHistoryTokens).mockReturnValue(0);
 		modelDispatch = jest.fn();
 		BaseModel.dispatch = modelDispatch;
 	});
@@ -152,6 +168,79 @@ describe('ChatPanel', () => {
 		expect(after).toHaveLength(before.length);
 	});
 
+	it('should clear only the active conversation when /clear is submitted', async () => {
+		const dispatch = jest.fn();
+		const view = renderPanel({ conversationId: 'chat-1', messages: [message], dispatch });
+		fireEvent.change(view.getByRole('textbox'), { target: { value: '/clear' } });
+		await act(async () => { fireEvent.click(view.getByRole('button', { name: 'Send' })); });
+		expect(dispatch).toHaveBeenCalledWith({
+			type: 'AI_CHAT_OPEN', windowId: 'second', conversationId: expect.any(String), messages: [],
+		});
+		expect(dispatch.mock.calls[0][0].conversationId).not.toBe('chat-1');
+		expect(runNoteChat).not.toHaveBeenCalled();
+	});
+
+	it('should compact the active conversation when /compact is submitted', async () => {
+		await saveMessage('chat-1', 'Original context');
+		const view = renderPanel({
+			conversationId: 'chat-1',
+			messages: [{ ...message, raw: [{ role: ChatRole.User, content: 'Original context' }] }],
+		});
+		fireEvent.change(view.getByRole('textbox'), { target: { value: '/compact' } });
+		await act(async () => { fireEvent.click(view.getByRole('button', { name: 'Send' })); });
+
+		expect(compactChatHistory).toHaveBeenCalledWith([{ role: ChatRole.User, content: 'Original context' }], expect.any(AbortSignal));
+		await waitFor(async () => expect(await ChatConversation.messages('chat-1')).toMatchObject([
+			{ text: 'Original context', raw: [] },
+			{
+				text: '',
+				hide: true,
+				raw: [
+					{ role: ChatRole.User, content: 'Earlier conversation summary' },
+					{ role: ChatRole.Assistant, content: 'I will use this summary as prior conversation context.' },
+				],
+			},
+			{ text: 'Conversation context compacted.', raw: [] },
+		]));
+	});
+
+	it('should compact long history before sending a new turn', async () => {
+		jest.mocked(estimateHistoryTokens).mockReturnValue(noteChatAutoCompactThreshold + 1);
+		jest.mocked(runNoteChat).mockResolvedValue([]);
+		jest.spyOn(Note, 'load').mockResolvedValue({ id: 'note-a', title: 'A', body: '' });
+		const view = renderPanel({
+			conversationId: 'chat-1',
+			noteId: 'note-a',
+			messages: [{ ...message, raw: [{ role: ChatRole.User, content: 'Prior context' }] }],
+		});
+		fireEvent.change(view.getByRole('textbox'), { target: { value: 'Continue' } });
+		await act(async () => { fireEvent.click(view.getByRole('button', { name: 'Send' })); });
+
+		expect(compactChatHistory).toHaveBeenCalled();
+		await waitFor(() => expect(runNoteChat).toHaveBeenCalledWith(
+			expect.any(Function),
+			[
+				{ role: ChatRole.User, content: 'Earlier conversation summary' },
+				{ role: ChatRole.Assistant, content: 'I will use this summary as prior conversation context.' },
+			],
+			'Continue',
+			expect.any(Object),
+			expect.any(Function),
+			expect.any(AbortSignal),
+		));
+		await waitFor(async () => expect(await ChatConversation.messages('chat-1')).toMatchObject([
+			{ role: 'user', text: 'Continue', raw: [{ role: ChatRole.User, content: 'Continue' }] },
+			{
+				text: '',
+				hide: true,
+				raw: [
+					{ role: ChatRole.User, content: 'Earlier conversation summary' },
+					{ role: ChatRole.Assistant, content: 'I will use this summary as prior conversation context.' },
+				],
+			},
+		]));
+	});
+
 	it('should open the selected history row in the current window', async () => {
 		await saveConversation('chat-1', 'Current chat');
 		await saveConversation('chat-2', 'Saved chat');
@@ -190,11 +279,99 @@ describe('ChatPanel', () => {
 		await waitFor(async () => expect(await ChatConversation.messages('chat-1')).toMatchObject([{ role: 'error', text: 'Network down' }]));
 	});
 
+	it('should undo an AI edit only when the note still matches and persist the consumed action', async () => {
+		const conversationId = 'undo-chat';
+		const assistant: ChatStandardMessage = {
+			role: ChatRole.Assistant,
+			content: '',
+			toolCalls: [{ toolName: 'editor_appendToNote', callId: 'undo-call', arguments: {}, parseError: null }],
+		};
+		const toolResult: ChatToolMessage = {
+			role: ChatRole.Tool,
+			toolName: 'editor_appendToNote',
+			toolCallId: 'undo-call',
+			content: 'Added text',
+			userDescription: 'Added 1 word',
+			isError: false,
+			isEdit: true,
+			editUndo: { noteId: 'note-a', before: 'Before', after: 'After' },
+		};
+		await ChatConversation.addMessage(conversationId, {
+			id: 'undo-message',
+			createdTime: 1,
+			role: 'assistant',
+			text: '',
+			raw: [assistant],
+			noteId: 'note-a',
+			noteTitle: 'A',
+		});
+		await ChatConversation.addToolResult(conversationId, toolResult);
+
+		jest.spyOn(Note, 'load')
+			.mockResolvedValueOnce({ id: 'note-a', body: 'After' })
+			.mockResolvedValueOnce({ id: 'note-a', body: 'Before' });
+		const execute = jest.spyOn(CommandService.instance(), 'executeInWindow').mockResolvedValue(undefined);
+		const view = renderPanel({
+			conversationId,
+			noteId: 'note-a',
+			noteTitle: 'A',
+			messages: [{
+				id: 'undo-message',
+				createdTime: 1,
+				role: 'assistant',
+				text: '',
+				raw: [assistant, toolResult],
+				noteId: 'note-a',
+				noteTitle: 'A',
+			}],
+		});
+
+		fireEvent.click(view.getByRole('button', { name: 'Undo' }));
+
+		await waitFor(() => expect(execute).toHaveBeenCalledWith('editor.setText', {
+			windowId: 'second',
+			args: ['Before'],
+		}));
+		await waitFor(async () => expect((await ChatConversation.messages(conversationId))[0].raw[1]).toMatchObject({ editUndo: null }));
+	});
+
 	it('should assign an ID before messages are added to a new conversation', async () => {
 		const dispatch = jest.fn();
 		renderPanel({ dispatch });
 		await waitFor(() => expect(dispatch).toHaveBeenCalledWith({
 			type: 'AI_CHAT_OPEN', windowId: 'second', conversationId: expect.any(String), messages: [],
 		}));
+	});
+
+	it('should show quick prompts for a new chat and run the selected prompt', async () => {
+		jest.spyOn(Note, 'load').mockResolvedValue({ id: 'note-a', title: 'A', body: '' });
+		jest.mocked(runNoteChat).mockResolvedValue([]);
+		const view = renderPanel({ conversationId: 'quick-chat', noteId: 'note-a', noteTitle: 'A' });
+
+		expect(view.getByRole('group', { name: 'Quick prompts' })).toBeTruthy();
+		await act(async () => { fireEvent.click(view.getByRole('button', { name: 'Polish note' })); });
+		await waitFor(() => expect(runNoteChat).toHaveBeenCalledWith(
+			expect.any(Function),
+			[],
+			'Improve this note\'s writing and readability. Preserve its meaning and facts, and apply the edits directly to the note.',
+			expect.any(Object),
+			expect.any(Function),
+			expect.any(AbortSignal),
+		));
+	});
+
+	it('should show quick prompts after switching notes in an existing chat', () => {
+		const separator: AiChatMessage = {
+			...message,
+			id: 'note-separator',
+			role: 'separator',
+			text: '— now viewing: B —',
+			noteId: 'note-b',
+			noteTitle: 'B',
+		};
+		const view = renderPanel({ noteId: 'note-b', noteTitle: 'B', messages: [message, separator] });
+
+		expect(view.getByRole('group', { name: 'Quick prompts' })).toBeTruthy();
+		expect(view.getByRole('button', { name: 'Format note' })).toBeTruthy();
 	});
 });

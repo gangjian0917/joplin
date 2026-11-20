@@ -331,7 +331,9 @@ export default function(state: AppState, action: any) {
 
 		case 'AI_CHAT_APPEND':
 		case 'AI_CHAT_ADD_TOOL_RESULT':
+		case 'AI_CHAT_UNDO_APPLIED':
 		case 'AI_CHAT_REMOVE':
+		case 'AI_CHAT_COMPACT':
 			newState = produce(state, draft => {
 				for (const windowState of stateUtils.allWindowStates(draft)) {
 					if (windowState.aiChatConversationId !== action.conversationId) continue;
@@ -339,6 +341,19 @@ export default function(state: AppState, action: any) {
 						windowState.aiChatMessages.push(action.message);
 					} else if (action.type === 'AI_CHAT_REMOVE') {
 						windowState.aiChatMessages = windowState.aiChatMessages.filter(message => message.id !== action.id);
+					} else if (action.type === 'AI_CHAT_COMPACT') {
+						for (const message of windowState.aiChatMessages) {
+							if (action.compactedMessageIds.includes(message.id)) message.raw = [];
+						}
+						windowState.aiChatMessages.push(action.message);
+					} else if (action.type === 'AI_CHAT_UNDO_APPLIED') {
+						const message = windowState.aiChatMessages.find(message => message.raw.some(entry =>
+							entry.role === ChatRole.Tool && entry.toolCallId === action.toolCallId,
+						));
+						const toolResult = message?.raw.find(entry =>
+							entry.role === ChatRole.Tool && entry.toolCallId === action.toolCallId,
+						);
+						if (toolResult?.role === ChatRole.Tool) toolResult.editUndo = null;
 					} else {
 						const message = windowState.aiChatMessages.find(message => message.raw.some(entry =>
 							entry.role === ChatRole.Assistant && entry.toolCalls?.some(call => call.callId === action.toolCall.toolCallId),

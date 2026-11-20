@@ -277,7 +277,7 @@ describe('models/Setting', () => {
 		await Setting.reset();
 
 		expect(Setting.value('sync.target')).toBe(0);
-		expect(Setting.value('style.editor.contentMaxWidth')).toBe(0);
+		expect(Setting.value('style.editor.contentMaxWidth')).toBe(1000);
 		await Setting.applyMigrations();
 		expect(Setting.value('sync.target')).toBe(7); // Changed
 		expect(Setting.value('style.editor.contentMaxWidth')).toBe(600); // Changed
@@ -295,11 +295,11 @@ describe('models/Setting', () => {
 		await Setting.reset();
 
 		expect(Setting.value('sync.target')).toBe(0);
-		expect(Setting.value('style.editor.contentMaxWidth')).toBe(0);
+		expect(Setting.value('style.editor.contentMaxWidth')).toBe(1000);
 		Setting.skipMigrations();
 		await Setting.applyMigrations();
 		expect(Setting.value('sync.target')).toBe(0); // Not changed
-		expect(Setting.value('style.editor.contentMaxWidth')).toBe(0); // Not changed
+		expect(Setting.value('style.editor.contentMaxWidth')).toBe(1000); // Not changed
 	}));
 
 	it('should not apply migrations that have already been applied', (async () => {
@@ -307,7 +307,7 @@ describe('models/Setting', () => {
 
 		Setting.setValue('lastSettingDefaultMigration', 0);
 		expect(Setting.value('sync.target')).toBe(0);
-		expect(Setting.value('style.editor.contentMaxWidth')).toBe(0);
+		expect(Setting.value('style.editor.contentMaxWidth')).toBe(1000);
 		await Setting.applyMigrations();
 		expect(Setting.value('sync.target')).toBe(0); // Not changed
 		expect(Setting.value('style.editor.contentMaxWidth')).toBe(600); // Changed

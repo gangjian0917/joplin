@@ -21,6 +21,66 @@ describe('app.reducer', () => {
 		expect(result.backgroundWindows.third.aiChatMessages).toEqual(messages);
 	});
 
+	it('should clear compacted context while preserving visible messages and the summary', () => {
+		const oldMessages: AiChatMessage[] = [
+			{ id: 'question', createdTime: 1, role: 'user', text: 'Question', raw: [{ role: ChatRole.User, content: 'Question' }], noteId: '', noteTitle: '' },
+			{ id: 'answer', createdTime: 2, role: 'assistant', text: 'Answer', raw: [{ role: ChatRole.Assistant, content: 'Answer' }], noteId: '', noteTitle: '' },
+		];
+		const summary: AiChatMessage = {
+			id: 'summary', createdTime: 3, role: 'assistant', text: '', hide: true,
+			raw: [{ role: ChatRole.User, content: 'Earlier conversation summary' }], noteId: '', noteTitle: '',
+		};
+		const state = createAppDefaultState({});
+		state.aiChatConversationId = 'chat-1';
+		state.aiChatMessages = oldMessages;
+
+		const result = appReducer(state, {
+			type: 'AI_CHAT_COMPACT',
+			conversationId: 'chat-1',
+			message: summary,
+			compactedMessageIds: ['question', 'answer'],
+		});
+
+		expect(result.aiChatMessages).toEqual([
+			{ ...oldMessages[0], raw: [] },
+			{ ...oldMessages[1], raw: [] },
+			summary,
+		]);
+	});
+
+	it('should clear an AI edit undo snapshot after it is applied', () => {
+		const toolCall: ChatToolCall = { toolName: 'editor_appendToNote', callId: 'call-1', arguments: {}, parseError: null };
+		const toolResult: ChatToolMessage = {
+			role: ChatRole.Tool,
+			toolName: 'editor_appendToNote',
+			toolCallId: 'call-1',
+			content: 'Added text',
+			userDescription: 'Added 1 word',
+			isError: false,
+			isEdit: true,
+			editUndo: { noteId: 'note-a', before: 'Before', after: 'After' },
+		};
+		const state = createAppDefaultState({});
+		state.aiChatConversationId = 'chat-1';
+		state.aiChatMessages = [{
+			id: 'edit',
+			createdTime: 1,
+			noteId: 'note-a',
+			noteTitle: 'A',
+			role: 'assistant',
+			text: '',
+			raw: [{ role: ChatRole.Assistant, content: '', toolCalls: [toolCall] }, toolResult],
+		}];
+
+		const result = appReducer(state, {
+			type: 'AI_CHAT_UNDO_APPLIED',
+			conversationId: 'chat-1',
+			toolCallId: 'call-1',
+		});
+
+		expect(result.aiChatMessages[0].raw[1]).toMatchObject({ editUndo: null });
+	});
+
 	it('should handle DIALOG_OPEN', async () => {
 		const state: AppState = createAppDefaultState({});
 

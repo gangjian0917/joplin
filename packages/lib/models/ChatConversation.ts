@@ -3,6 +3,7 @@ import BaseModel, { ModelType } from '../BaseModel';
 import markdownUtils from '../markdownUtils';
 import { ChatMessage as ChatTurn, ChatRole, ChatToolMessage } from '../services/ai/types';
 import ChatMessage from './ChatMessage';
+import { SqlQuery } from '../services/database/types';
 
 export interface ChatHistoryMessage {
 	id: string;
@@ -101,6 +102,44 @@ export default class ChatConversation extends BaseModel {
 		this.dispatch({ type: 'AI_CHAT_APPEND', conversationId, message });
 	}
 
+	public static async compact(conversationId: string, message: ChatHistoryMessage, preserveMessageId?: string) {
+		const release = await this.messageMutex_.acquire();
+		let compactedMessageIds: string[] = [];
+		try {
+			const rows = await ChatMessage.byConversationId(conversationId);
+			compactedMessageIds = rows.filter(row => row.id !== preserveMessageId).map(row => row.id);
+			const queries: SqlQuery[] = compactedMessageIds.map(id => ({
+				sql: 'UPDATE chat_messages SET raw = ? WHERE id = ?',
+				params: ['[]', id],
+			}));
+			queries.push({
+				sql: 'INSERT INTO chat_messages (id, conversation_id, role, text, raw, hide, position, created_time, note_id, note_title) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+				params: [
+					message.id,
+					conversationId,
+					message.role,
+					message.text,
+					JSON.stringify(message.raw),
+					message.hide ? 1 : 0,
+					await ChatMessage.nextPosition(conversationId),
+					message.createdTime,
+					message.noteId,
+					message.noteTitle,
+				],
+			});
+			await this.db().transactionExecBatch(queries);
+		} finally {
+			release();
+		}
+		this.dispatch({
+			type: 'AI_CHAT_COMPACT',
+			conversationId,
+			message,
+			compactedMessageIds,
+			preserveMessageId,
+		});
+	}
+
 	public static async removeMessage(conversationId: string, id: string) {
 		const release = await this.messageMutex_.acquire();
 		try {
@@ -126,6 +165,23 @@ export default class ChatConversation extends BaseModel {
 			release();
 		}
 		this.dispatch({ type: 'AI_CHAT_ADD_TOOL_RESULT', conversationId, toolCall });
+	}
+
+	public static async markToolUndoApplied(conversationId: string, toolCallId: string) {
+		const release = await this.messageMutex_.acquire();
+		try {
+			for (const row of await ChatMessage.byToolCallId(conversationId, toolCallId)) {
+				const raw: ChatTurn[] = JSON.parse(row.raw);
+				const toolResult = raw.find(entry => entry.role === ChatRole.Tool && entry.toolCallId === toolCallId);
+				if (toolResult?.role !== ChatRole.Tool || !toolResult.editUndo) continue;
+				toolResult.editUndo = null;
+				await ChatMessage.save({ id: row.id, raw: JSON.stringify(raw) }, { autoTimestamp: false });
+				break;
+			}
+		} finally {
+			release();
+		}
+		this.dispatch({ type: 'AI_CHAT_UNDO_APPLIED', conversationId, toolCallId });
 	}
 
 	private static async saveForMessage(conversationId: string, message: ChatHistoryMessage) {

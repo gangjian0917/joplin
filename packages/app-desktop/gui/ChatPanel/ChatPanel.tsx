@@ -9,7 +9,7 @@ import CommandService from '@joplin/lib/services/CommandService';
 import Logger from '@joplin/utils/Logger';
 import { stateUtils } from '@joplin/lib/reducer';
 import { AiChatMessage, AppState } from '../../app.reducer';
-import { runNoteChat } from '@joplin/lib/services/ai/noteChat';
+import { compactChatHistory, estimateHistoryTokens, noteChatAutoCompactThreshold, runNoteChat } from '@joplin/lib/services/ai/noteChat';
 import { AvailabilityReason, chatAvailability } from '@joplin/lib/services/ai/availability';
 import { WindowIdContext } from '../NewWindowOrIFrame';
 import AiDegradedNotice from '../AiDegradedNotice';
@@ -116,6 +116,9 @@ const ChatPanel: React.FC<Props> = (props) => {
 	const [historyOpen, setHistoryOpen] = useState(false);
 	const historyId = useId();
 	const [conversations, setConversations] = useState<Conversation[]>([]);
+	const [requestStatus, setRequestStatus] = useState('');
+	const [undoingToolCallId, setUndoingToolCallId] = useState<string|null>(null);
+	const composerInputRef = useRef<HTMLTextAreaElement>(null);
 	const loadConversationHistory = useCallback(async (search = '') => {
 		try {
 			setConversations(await ChatConversation.history(search));
@@ -194,6 +197,39 @@ const ChatPanel: React.FC<Props> = (props) => {
 		}
 	}, [props.conversationId]);
 
+	const handleUndoEdit = useCallback(async (result: ChatToolMessage) => {
+		const undo = result.editUndo;
+		if (sending || !undo || undo.noteId !== props.noteId || !props.conversationId) return;
+		setUndoingToolCallId(result.toolCallId);
+		try {
+			const note = await Note.load(undo.noteId);
+			if (!note || note.body !== undo.after || noteIdRef.current !== undo.noteId) {
+				throw new JoplinError(
+					_('The note changed after this AI edit. Undo was not applied to protect newer changes.'),
+					'aiChatUndoConflict',
+				);
+			}
+
+			const changeListener = waitForNextNoteChangeOrTimeout(undo.noteId, Second);
+			await CommandService.instance().executeInWindow('editor.setText', {
+				windowId,
+				args: [undo.before],
+			});
+			await changeListener;
+
+			const updatedNote = await Note.load(undo.noteId);
+			if (!updatedNote || updatedNote.body !== undo.before) {
+				throw new JoplinError(_('Could not undo the AI edit.'), 'aiChatUndoFailed');
+			}
+			await ChatConversation.markToolUndoApplied(props.conversationId, result.toolCallId);
+		} catch (error) {
+			logger.warn('Could not undo AI edit:', error);
+			void appendMessage({ id: makeId(), role: 'error', text: error.message || _('Could not undo the AI edit.'), raw: [] });
+		} finally {
+			setUndoingToolCallId(null);
+		}
+	}, [appendMessage, props.conversationId, props.noteId, sending, windowId]);
+
 	useEffect(() => {
 		if (props.conversationId) return;
 		dispatch({ type: 'AI_CHAT_OPEN', windowId, conversationId: uuid.create(), messages });
@@ -219,13 +255,14 @@ const ChatPanel: React.FC<Props> = (props) => {
 	useEffect(() => {
 		if (messages.length === 0) return;
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-	}, [messages]);
+	}, [messages, requestStatus]);
 
 	const conversationTurns = useMemo<ChatMessage[]>(() => {
 		return messages
 			.map(m => m.raw)
 			.flat();
 	}, [messages]);
+	const contextTokenEstimate = useMemo(() => estimateHistoryTokens(conversationTurns), [conversationTurns]);
 
 	// Joplin Cloud is remote but the user already consented via sync setup.
 	const requiresDisclosure = props.providerType !== 'joplin-cloud';
@@ -233,22 +270,74 @@ const ChatPanel: React.FC<Props> = (props) => {
 
 	const handleCancel = useCallback(() => {
 		cancelRequest();
+		setRequestStatus('');
 		void appendMessage({ id: makeId(), role: 'assistant', text: _('(Cancelled)'), raw: [] });
 	}, [cancelRequest, appendMessage]);
 
-	const handleSend = useCallback(async () => {
-		const text = input.trim();
+	const handleNewChat = useCallback(() => {
+		if (archivingRef.current) return;
+		cancelRequest();
+		setRequestStatus('');
+		// Only saved once a message is sent so empty chats don't show up in history
+		dispatch({ type: 'AI_CHAT_OPEN', windowId, conversationId: uuid.create(), messages: [] });
+	}, [dispatch, windowId, cancelRequest]);
+
+	const compactConversation = useCallback(async (history: ChatMessage[], preserveMessageId?: string) => {
+		if (!props.conversationId) throw new Error('Cannot compact a chat without a conversation ID.');
+		const compactedHistory = await compactChatHistory(history, abortControllerRef.current.signal);
+		const now = Date.now();
+		await ChatConversation.compact(props.conversationId, {
+			id: makeId(),
+			createdTime: now,
+			role: 'assistant',
+			text: '',
+			raw: compactedHistory,
+			hide: true,
+			noteId: props.noteId ?? '',
+			noteTitle: '',
+		}, preserveMessageId);
+		return compactedHistory;
+	}, [abortControllerRef, props.conversationId, props.noteId]);
+
+	const handleSend = useCallback(async (prompt?: string) => {
+		const text = (prompt ?? input).trim();
 		if (!text || sending) return;
+		const abortController = abortControllerRef.current;
+		if (text === '/clear') {
+			setInput('');
+			handleNewChat();
+			return;
+		}
+		if (text === '/compact') {
+			setInput('');
+			setSending(true);
+			setRequestStatus(_('Compacting conversation…'));
+			try {
+				if (!conversationTurns.length) {
+					void appendMessage({ id: makeId(), role: 'error', text: _('There is no conversation context to compact.'), raw: [] });
+					return;
+				}
+				await compactConversation(conversationTurns);
+				void appendMessage({ id: makeId(), role: 'assistant', text: _('Conversation context compacted.'), raw: [] });
+			} catch (error) {
+				if (abortController.signal.aborted) return;
+				logger.warn('Could not compact chat context:', error);
+				void appendMessage({ id: makeId(), role: 'error', text: error.message || _('Could not compact conversation context.'), raw: [] });
+			} finally {
+				setSending(false);
+				setRequestStatus('');
+			}
+			return;
+		}
 		if (!props.noteId) {
 			void appendMessage({
 				id: makeId(), role: 'error', text: _('Open a note to start chatting.'), raw: [],
 			});
 			return;
 		}
-		const abortController = abortControllerRef.current;
-
 		const noteIdAtStart = props.noteId;
 		setSending(true);
+		setRequestStatus(_('Thinking…'));
 		setInput('');
 
 		// Captured so we can roll it back on failure — otherwise a retry would
@@ -289,16 +378,34 @@ const ChatPanel: React.FC<Props> = (props) => {
 				};
 			};
 
+			let requestTurns = conversationTurns;
+			if (estimateHistoryTokens([
+				...requestTurns,
+				{ role: ChatRole.User, content: text },
+			]) > noteChatAutoCompactThreshold && requestTurns.length) {
+				requestTurns = await compactConversation(requestTurns, userTurnId);
+			}
+
 			let lastHistory = [
 				{ role: ChatRole.System, content: 'placeholder' },
-				...conversationTurns,
+				...requestTurns,
 			];
+			const pendingToolCallIds = new Set<string>();
 
 			const onHistoryChanged = (history: ChatMessage[]) => {
 				if (abortController.signal.aborted) return;
 
 				for (let i = lastHistory.length; i < history.length; i++) {
 					const entry = history[i];
+
+					if (entry.role === ChatRole.Assistant) {
+						pendingToolCallIds.clear();
+						for (const call of entry.toolCalls ?? []) pendingToolCallIds.add(call.callId);
+						setRequestStatus(pendingToolCallIds.size ? _('Working with the note…') : _('Thinking…'));
+					} else if (entry.role === ChatRole.Tool) {
+						pendingToolCallIds.delete(entry.toolCallId);
+						setRequestStatus(pendingToolCallIds.size ? _('Working with the note…') : _('Thinking…'));
+					}
 
 					// User messages are added elsewhere, when the user submits the chat
 					if (entry.role === ChatRole.User) continue;
@@ -309,9 +416,10 @@ const ChatPanel: React.FC<Props> = (props) => {
 						void addToolResult(entry);
 					} else {
 						hadVisibleResponse ||= !entry.hide;
+						const messageId = makeId();
 
 						void appendMessage({
-							id: makeId(),
+							id: messageId,
 							role: entry.role,
 							text: entry.content,
 							hide: entry.hide,
@@ -333,7 +441,7 @@ const ChatPanel: React.FC<Props> = (props) => {
 			};
 
 			await runNoteChat(
-				getContext, conversationTurns, text, {
+				getContext, requestTurns, text, {
 					replaceSelection: async (text, oldText) => {
 						if (text === oldText) return;
 						assertSameNote();
@@ -372,20 +480,14 @@ const ChatPanel: React.FC<Props> = (props) => {
 			void appendMessage({ id: makeId(), role: 'error', text: error.message || _('Something went wrong.'), raw: [] });
 		} finally {
 			setSending(false);
+			setRequestStatus('');
 		}
-	}, [input, sending, props.noteId, conversationTurns, windowId, addToolResult, appendMessage, removeMessage, cancelRequest, abortControllerRef]);
+	}, [input, sending, props.noteId, conversationTurns, windowId, addToolResult, appendMessage, removeMessage, cancelRequest, abortControllerRef, handleNewChat, compactConversation]);
 
 	const handleAcknowledgeDisclosure = useCallback(() => {
 		Setting.setValue(disclosureSetting, true);
 		setDisclosureShown(true);
 	}, []);
-
-	const handleNewChat = useCallback(() => {
-		if (archivingRef.current) return;
-		cancelRequest();
-		// Only saved once a message is sent so empty chats don't show up in history
-		dispatch({ type: 'AI_CHAT_OPEN', windowId, conversationId: uuid.create(), messages: [] });
-	}, [dispatch, windowId, cancelRequest]);
 
 	const handleOpenConversation = useCallback(async (conversationId: string) => {
 		if (conversationId === props.conversationId || archivingRef.current) return;
@@ -474,6 +576,8 @@ const ChatPanel: React.FC<Props> = (props) => {
 		}
 
 		const visibleMessages = messages.filter(m => !m.hide);
+		const lastVisibleMessage = visibleMessages[visibleMessages.length - 1];
+		const showQuickPrompts = !!props.noteId && (!lastVisibleMessage || lastVisibleMessage.role === 'separator');
 
 		const content = <>
 			{props.aiDegraded && <AiDegradedNotice className='degraded-status' />}
@@ -490,7 +594,46 @@ const ChatPanel: React.FC<Props> = (props) => {
 						>{_('Manage capabilities')}</button>
 					</div>
 				)}
-				{visibleMessages.map(m => <ChatMessageItem key={m.id} message={m}/>)}
+				{visibleMessages.map(m => <ChatMessageItem
+					key={m.id}
+					message={m}
+					noteId={props.noteId}
+					sending={sending}
+					undoingToolCallId={undoingToolCallId}
+					onUndo={handleUndoEdit}
+				/>)}
+				{showQuickPrompts && <div className='quick-prompts' role='group' aria-label={_('Quick prompts')}>
+					<span className='label'>{_('Try a common task')}</span>
+					<div className='actions'>
+						{[
+							{
+								label: _('Polish note'),
+								prompt: _('Improve this note\'s writing and readability. Preserve its meaning and facts, and apply the edits directly to the note.'),
+							},
+							{
+								label: _('Format note'),
+								prompt: _('Improve the formatting of this note using clear headings, lists, and Markdown where appropriate. Preserve its meaning and content, and apply the edits directly to the note.'),
+							},
+							{
+								label: _('Condense note'),
+								prompt: _('Condense this note by removing repetition and unnecessary wording while preserving all important information. Apply the edits directly to the note.'),
+							},
+							{
+								label: _('Add a summary'),
+								prompt: _('Add a concise summary at the beginning of this note. Keep the original content intact.'),
+							},
+						].map(({ label, prompt }) => <button
+							key={label}
+							type='button'
+							disabled={sending}
+							onClick={() => { void handleSend(prompt); }}
+						>{label}</button>)}
+					</div>
+				</div>}
+				{sending && <div className='request-status' role='status'>
+					<i className='fas fa-spinner fa-spin' aria-hidden='true'/>
+					<span>{requestStatus || _('Thinking…')}</span>
+				</div>}
 				<div ref={messagesEndRef} />
 			</div>
 			<div className='composer'>
@@ -501,19 +644,27 @@ const ChatPanel: React.FC<Props> = (props) => {
 						<a href='#' onClick={(e) => { e.preventDefault(); handleAcknowledgeDisclosure(); }}>{_('Don\'t show again')}</a>
 					</div>
 				)}
+				<div className='composer-toolbar'>
+					<span className='shortcut'>{_('Enter to send · Shift+Enter for a new line')}</span>
+					<div className='quick-commands'>
+						<button type='button' disabled={sending} onClick={() => { setInput('/compact'); focus('ChatPanel::command', composerInputRef.current); }}>/compact</button>
+						<button type='button' disabled={sending} onClick={() => { setInput('/clear'); focus('ChatPanel::command', composerInputRef.current); }}>/clear</button>
+					</div>
+				</div>
 				<div className='input-wrapper'>
 					<textarea
 						className='input'
+						ref={composerInputRef}
 						value={input}
 						onChange={(e) => setInput(e.target.value)}
 						onKeyDown={handleKeyDown}
-						placeholder={_('Ask about this note, or request a change…')}
+						placeholder={_('Ask about this note, request a change, or use /clear or /compact…')}
 						aria-label={_('Chat message')}
 					/>
 					<button
 						type='button'
 						className='send'
-						onClick={sending ? handleCancel : handleSend}
+						onClick={() => { if (sending) handleCancel(); else void handleSend(); }}
 						disabled={!sending && !input.trim()}
 						aria-label={sendButtonLabel}
 						title={sendButtonLabel}
@@ -582,6 +733,18 @@ const ChatPanel: React.FC<Props> = (props) => {
 					aria-label={closeLabel}
 				><i className='toolbar-icon fas fa-times' role='img' aria-hidden={true}/></button>
 			</div>
+			{props.noteId && <div className='context-strip' title={props.noteTitle || _('Untitled note')}>
+				<i className='fas fa-file-alt' aria-hidden='true'/>
+				<span>{props.noteTitle || _('Untitled note')}</span>
+				{conversationTurns.length > 0 && <div className={`context-usage${contextTokenEstimate >= noteChatAutoCompactThreshold * 0.8 ? ' -near-limit' : ''}`}>
+					<span>{_('%s tokens', new Intl.NumberFormat().format(contextTokenEstimate))}</span>
+					<progress
+						max={noteChatAutoCompactThreshold}
+						value={Math.min(contextTokenEstimate, noteChatAutoCompactThreshold)}
+						aria-label={_('Conversation history size')}
+					/>
+				</div>}
+			</div>}
 			{content}
 		</div>
 	);

@@ -1,4 +1,5 @@
-import { _internal, ChatCommands, runNoteChat } from './noteChat';
+import { _internal, ChatCommands, compactChatHistory, estimateHistoryTokens, runNoteChat } from './noteChat';
+import AiService from './AiService';
 import { ChatRole, ChatToolCall } from './types';
 import { expectThrow, setupDatabase, switchClient, withWarningSilenced } from '../../testing/test-utils';
 import Setting from '../../models/Setting';
@@ -127,6 +128,41 @@ describe('noteChat', () => {
 		expect(_internal.estimateTokens('a'.repeat(400))).toBe(100);
 	});
 
+	test('estimateHistoryTokens counts tool results once', () => {
+		expect(estimateHistoryTokens([{
+			role: ChatRole.Tool,
+			content: '12345678',
+			toolName: 'editor_readNoteBody',
+			toolCallId: 'call-1',
+			isError: false,
+			userDescription: 'Read note',
+			isEdit: false,
+		}])).toBe(2);
+	});
+
+	test('compactChatHistory summarizes history into reusable context turns', async () => {
+		const chat = jest.spyOn(AiService.instance(), 'chat').mockResolvedValue({
+			text: 'The user asked to update the note.',
+			toolCalls: [],
+			usage: { inputTokens: 10, outputTokens: 5 },
+		});
+		const signal = new AbortController().signal;
+		try {
+			await expect(compactChatHistory([
+				{ role: ChatRole.User, content: 'Update the note.' },
+			], signal)).resolves.toEqual([
+				{ role: ChatRole.User, content: 'Earlier conversation summary (context only):\nThe user asked to update the note.' },
+				{ role: ChatRole.Assistant, content: 'I will use this summary as prior conversation context.' },
+			]);
+			expect(chat).toHaveBeenCalledWith([
+				{ role: ChatRole.System, content: expect.stringContaining('Summarize this portion') },
+				{ role: ChatRole.User, content: 'user: Update the note.' },
+			], { maxTokens: 1500, signal });
+		} finally {
+			chat.mockRestore();
+		}
+	});
+
 	test('toolDefinitions advertises replaceFencedBlock with structured-block guidance', () => {
 		const { context, commands } = makeTestContext({ title: 'n', body: '```abc\n```', selection: null });
 		const tools = new ToolIndex({ note: context, commands }).getTools();
@@ -173,10 +209,11 @@ describe('noteChat', () => {
 			onContext,
 			commands,
 			new AbortController().signal,
+			new Map(),
 		);
 
 		expect((await onContext()).body).toBe('Updated\n\nTest.');
-		expect(result).toMatchObject([
+		expect(result.responses).toMatchObject([
 			{
 				role: ChatRole.Tool,
 				toolName: 'editor_appendToNote',
@@ -192,6 +229,11 @@ describe('noteChat', () => {
 				userDescription: 'Removed 1 word\nAdded 1 word',
 			},
 		]);
+		expect(result.responses[1].editUndo).toEqual({
+			noteId: '00000000000000000000000000000000',
+			before: 'Body',
+			after: 'Updated\n\nTest.',
+		});
 	});
 
 	test('noteChat should stop retry loop if several responses in a row include tool failures', async () => {
@@ -238,6 +280,44 @@ describe('noteChat', () => {
 
 			{ role: ChatRole.Assistant, content: 'tool not found: editor_replaceRange\ntool not found: editor_appendToNote' },
 		]);
+	});
+
+	test('noteChat should pause after more than 12 edits to the same line', async () => {
+		const { onContext, commands } = makeTestContext({});
+		const result = await runNoteChat(
+			onContext,
+			[],
+			'/repeat 100\n/tool editor_replaceRange { "anchor": "B", "text": "Bx" }',
+			commands,
+			() => {},
+			new AbortController().signal,
+		);
+
+		const toolResults = result.filter(message => message.role === ChatRole.Tool && message.toolName === 'editor_replaceRange');
+		expect(toolResults.filter(message => message.role === ChatRole.Tool && !message.isError)).toHaveLength(12);
+		expect(result[result.length - 1]).toMatchObject({
+			role: ChatRole.Assistant,
+			content: expect.stringContaining('Paused after more than 12 edits to the same line'),
+		});
+		expect((await onContext()).body).toBe(`B${'x'.repeat(12)}ody`);
+	});
+
+	test('noteChat should allow more than 12 edits when they target different lines', async () => {
+		const { onContext, commands } = makeTestContext({});
+		const result = await runNoteChat(
+			onContext,
+			[],
+			'/repeat 20\n/tool editor_appendToNote { "text": "x\\n" }',
+			commands,
+			() => {},
+			new AbortController().signal,
+		);
+
+		const successfulEdits = result.filter(message => message.role === ChatRole.Tool
+			&& message.toolName === 'editor_appendToNote'
+			&& !message.isError);
+		expect(successfulEdits).toHaveLength(20);
+		expect(result.some(message => message.role === ChatRole.Assistant && message.content.includes('Paused after more than'))).toBe(false);
 	});
 
 	test('noteChat initialize the chat history with the note body', async () => {

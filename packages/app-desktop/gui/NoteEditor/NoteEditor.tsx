@@ -833,6 +833,7 @@ function NoteEditorContent(props: NoteEditorProps) {
 					<NoteTitleBar
 						titleInputRef={titleInputRef}
 						themeId={props.themeId}
+						contentMaxWidth={props.contentMaxWidth}
 						isProvisional={props.isProvisional}
 						noteIsTodo={formNote.is_todo}
 						noteTitle={formNote.title}

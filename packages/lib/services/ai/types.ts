@@ -23,6 +23,7 @@ export interface ChatToolMessage extends ChatBaseMessage {
 	toolName: string;
 	toolCallId: string;
 	isError: boolean;
+	editUndo?: { noteId: string; before: string; after: string }|null;
 	// A very brief description of the result that can be shown to the user
 	userDescription: string;
 	isEdit: boolean;

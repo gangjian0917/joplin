@@ -11,6 +11,7 @@ import { EditorToolbarSlots } from '../EditorToolbarHost';
 
 interface Props {
 	themeId: number;
+	contentMaxWidth: number;
 	noteTitle: string;
 	noteIsTodo: number;
 	isProvisional: boolean;
@@ -34,9 +35,8 @@ function styles_(props: Props) {
 				paddingRight: 8,
 				color: theme.textStyle.color,
 				fontSize: shim.isMac() ? macosNoteTitleFontSize : Math.round(theme.textStyle.fontSize * 1.5),
-				fontWeight: shim.isMac() ? 700 : 'bold',
+				fontWeight: shim.isMac() ? 600 : 'bold',
 				lineHeight: shim.isMac() ? 1.25 : undefined,
-				letterSpacing: shim.isMac() ? '-0.024em' : undefined,
 				backgroundColor: theme.backgroundColor,
 				border: 'none',
 				width: '100%',
@@ -132,7 +132,10 @@ export default function NoteTitleBar(props: Props) {
 					{renderNoteToolbar()}
 				</div>
 			</div>
-			<div className='note-title-input-row'>
+			<div
+				className='note-title-input-row'
+				style={props.contentMaxWidth ? { maxWidth: props.contentMaxWidth } : undefined}
+			>
 				<input
 					className="title-input"
 					type="text"

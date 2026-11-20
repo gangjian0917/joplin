@@ -61,7 +61,7 @@ interface Props {
 	searchBarHandleRef?: React.MutableRefObject<SearchBarHandle | null>;
 }
 
-function SearchBar(props: Props) {
+export function SearchBar(props: Props) {
 	const [query, setQuery] = useState('');
 	const [searchStarted, setSearchStarted] = useState(false);
 	const searchId = useRef(uuid.create());
@@ -130,11 +130,6 @@ function SearchBar(props: Props) {
 	}, [props.selectedNoteId]);
 
 	function onChange(event: { value: string }) {
-		if (event.value.length === 0) {
-			// Revert to previous state if query string becomes empty
-			void onExitSearch();
-			return;
-		}
 		setSearchStarted(true);
 		setQuery(event.value);
 	}
@@ -166,7 +161,7 @@ function SearchBar(props: Props) {
 	}, [onExitSearch]);
 
 	const onSearchButtonClick = useCallback(() => {
-		if (props.isFocused || searchStarted) {
+		if (searchStarted) {
 			void onExitSearch();
 		} else {
 			setSearchStarted(true);
@@ -176,7 +171,7 @@ function SearchBar(props: Props) {
 			});
 		}
 		// eslint-disable-next-line @seiyab/react-hooks/exhaustive-deps -- Old code before rule was applied
-	}, [onExitSearch, props.isFocused, searchStarted]);
+	}, [onExitSearch, props.dispatch, searchStarted]);
 
 	// The input is only mounted after the search is expanded, so focus it
 	// right when it appears.
